@@ -1,36 +1,163 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CryptX Judging Platform
 
-## Getting Started
+A full-stack multi-competition hackathon judging and evaluation platform built for CryptX (https://cryptx.lk/), supporting multiple competitions, evaluators, weighted scoring, and real-time leaderboards.
 
-First, run the development server:
+## Tech Stack
+
+- **Frontend**: Next.js 16 (App Router), TypeScript, Tailwind CSS
+- **Backend**: Firebase (Firestore, Realtime Database, Auth) on Spark (free) plan
+- **Hosting**: Vercel (serverless API routes replace Cloud Functions)
+- **Forms**: react-hook-form + zod
+- **State**: React Context + SWR
+- **CSV/JSON**: papaparse
+
+## Critical Architecture Note
+
+This platform runs entirely on Firebase's **free Spark plan**, which does not include Cloud Functions. All server-side logic (leaderboard recalculation, custom claims management, invite validation) runs in **Next.js API routes** deployed on Vercel.
+
+## Features
+
+- Multi-competition support with configurable team sizes
+- Weighted criteria-based scoring (weights must sum to 100%)
+- CryptX Hackathon template with 8 pre-configured criteria
+- CSV and JSON team imports with validation
+- Invite-based evaluator onboarding (manual link sharing)
+- Real-time leaderboard via Firebase Realtime Database
+- Draft score saving (configurable per competition)
+- Role-based access control (superadmin, organizer, evaluator)
+- Audit logging for all actions
+
+## Project Status
+
+### ✅ Completed (Core Backend)
+
+- Firebase SDK setup (client + admin)
+- Environment configuration
+- Security rules (Firestore + Realtime Database)
+- Firestore indexes
+- Authentication middleware
+- TypeScript type definitions
+- Scoring utility functions
+- Real-time leaderboard hook
+- **All core API routes**:
+  - Auth (session, set-claims)
+  - Invitations (create, accept)
+  - Competitions (create, update status)
+  - Teams (import)
+  - Scores (submit, save) with automatic leaderboard recalculation
+- **Scripts**:
+  - `scripts/setAdmin.ts` - Bootstrap first superadmin
+  - `scripts/seed.ts` - Create competition with criteria template
+
+### 🚧 Pending (Frontend UI)
+
+- Public pages (landing, login, invite acceptance)
+- Admin panel (dashboard, competitions, teams, evaluators, scorecards, leaderboard)
+- Evaluator panel (dashboard, scoring form, leaderboard)
+- UI components and styling
+
+## Quick Start
+
+### 1. Prerequisites
+
+- Node.js 20+ and Bun installed
+- Firebase project created (free Spark plan)
+- Vercel account (free tier)
+
+### 2. Firebase Setup
+
+1. Go to [Firebase Console](https://console.firebase.google.com)
+2. Create a new project (disable Analytics)
+3. Enable services:
+   - **Authentication**: Email/Password + Google provider
+   - **Firestore**: Production mode, region `asia-south1` (Mumbai)
+   - **Realtime Database**: Locked mode, region `asia-southeast1` (Singapore)
+4. Register a web app and copy the config
+5. Generate service account key: Project Settings → Service Accounts → Generate new private key
+
+### 3. Local Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Install dependencies
+bun install
+
+# Copy environment template
+cp .env.local.example .env.local
+
+# Edit .env.local with your Firebase credentials
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 4. Deploy Firebase Rules
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+firebase login
+firebase init
+firebase deploy --only firestore:rules,firestore:indexes,database
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 5. Create Superadmin
 
-## Learn More
+```bash
+# 1. Start dev server
+bun run dev
 
-To learn more about Next.js, take a look at the following resources:
+# 2. Visit http://localhost:3000/login and create account
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# 3. Run setAdmin script
+bun scripts/setAdmin.ts your-email@example.com cryptx
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# 4. Sign out and back in
+```
 
-## Deploy on Vercel
+### 6. Seed Competition (Optional)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+bun scripts/seed.ts your-email@example.com
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 7. Run with Emulators
+
+```bash
+# Terminal 1: Emulators
+firebase emulators:start
+
+# Terminal 2: Dev server  
+bun run dev
+```
+
+## API Routes
+
+| Endpoint | Method | Auth | Description |
+|---|---|---|---|
+| `/api/auth/session` | POST | Public | Create session cookie |
+| `/api/auth/set-claims` | POST | Superadmin | Set custom claims |
+| `/api/invitations/create` | POST | Admin | Generate invite link |
+| `/api/invite/accept` | POST | Auth | Accept invitation |
+| `/api/competitions` | POST | Admin | Create competition |
+| `/api/competitions/[id]/status` | PATCH | Admin | Update status |
+| `/api/teams/import` | POST | Admin | Import teams (CSV/JSON) |
+| `/api/scores/submit` | POST | Evaluator | Submit + update leaderboard |
+| `/api/scores/save` | POST | Evaluator | Save draft |
+
+## Deployment
+
+1. Push to GitHub
+2. Import in Vercel
+3. Add all environment variables
+4. Add Vercel domain to Firebase authorized domains
+
+## Scoring Algorithm
+
+```
+Weighted Score = Σ(score / maxScore * weight)
+Team Average = Mean of all evaluator scores
+Rank = Sorted by average (descending)
+```
+
+## Support
+
+Built for CryptX - https://cryptx.lk/
+
+---
+
+MIT License

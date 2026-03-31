@@ -1,0 +1,10 @@
+{
+  "rules": {
+    "leaderboards": {
+      "$competitionId": {
+        ".read": "auth != null",
+        ".write": false
+      }
+    }
+  }
+}

@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() { return request.auth != null; }
+    function hasRole(role) { return request.auth.token.role == role; }
+    function isSuperAdmin() { return hasRole('superadmin'); }
+    function isOrganizerFor(cid) {
+      return hasRole('organizer') && cid in request.auth.token.competitionIds;
+    }
+    function isEvaluatorFor(cid) {
+      return hasRole('evaluator') && cid in request.auth.token.competitionIds;
+    }
+    function isAdminFor(cid) { return isSuperAdmin() || isOrganizerFor(cid); }
+
+    match /organisations/{orgId} {
+      allow read: if isSignedIn() && request.auth.token.orgId == orgId;
+      allow write: if isSuperAdmin();
+    }
+
+    match /competitions/{cid} {
+      allow read: if isSignedIn() && (isAdminFor(cid) || isEvaluatorFor(cid));
+      allow write: if isAdminFor(cid);
+
+      match /criteria/{id} {
+        allow read: if isSignedIn() && (isAdminFor(cid) || isEvaluatorFor(cid));
+        allow write: if isAdminFor(cid);
+      }
+      match /teams/{id} {
+        allow read: if isSignedIn() && (isAdminFor(cid) || isEvaluatorFor(cid));
+        allow write: if isAdminFor(cid);
+      }
+      match /evaluators/{id} {
+        allow read: if isAdminFor(cid);
+        allow write: if false;
+      }
+      match /scorecards/{id} {
+        allow read: if isAdminFor(cid) ||
+          (isEvaluatorFor(cid) && resource.data.evaluatorId == request.auth.uid);
+        allow write: if false;
+      }
+      match /leaderboard_cache/{id} {
+        allow read: if isAdminFor(cid) ||
+          (isEvaluatorFor(cid) &&
+           get(/databases/$(database)/documents/competitions/$(cid)).data.scoringConfig.showLeaderboardTo == 'evaluators_and_organizers');
+        allow write: if false;
+      }
+    }
+
+    match /invitations/{id} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+    match /audit_logs/{id} {
+      allow read: if isSuperAdmin();
+      allow write: if false;
+    }
+  }
+}
