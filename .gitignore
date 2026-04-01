@@ -12,6 +12,8 @@
 
 #config
 firebaseConfig.js
+*-firebase-adminsdk-*.json
+
 
 # testing
 /coverage

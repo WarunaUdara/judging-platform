@@ -3,27 +3,37 @@
 @tailwind utilities;
 
 :root {
-  /* Core palette provided by user (Next.js-like restrained palette) */
-  --background: oklch(0.1805 0.0155 101.8);
-  --foreground: oklch(0.9439 0.0011 17.18);
-  --card: oklch(0.2351 0.0115 91.75);
-  --card-foreground: oklch(0.9439 0.0011 17.18);
-  --primary: oklch(0.6522 0.2135 37.99);
-  --primary-foreground: oklch(0.98 0.016 73.684);
-  --muted: oklch(0.268 0.007 34.298);
-  --muted-foreground: oklch(0.709 0.01 56.259);
-  --border: oklch(0.2755 0.0126 100.48);
-  --input: oklch(1 0 0 / 10%);
-  --ring: oklch(0.2755 0.0126 100.48);
-  --sidebar: oklch(0.216 0.006 56.043);
-  --sidebar-foreground: oklch(0.9439 0.0011 17.18);
+  /* Monochrome palette: black, white, silver */
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #0a0a0a;
+  --card-foreground: #ffffff;
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  --secondary: #171717;
+  --secondary-foreground: #ffffff;
+  --muted: #171717;
+  --muted-foreground: #a1a1a1;
+  --accent: #262626;
+  --accent-foreground: #ffffff;
+  --border: #333333;
+  --input: #0a0a0a;
+  --ring: #ffffff;
+  --sidebar: #0a0a0a;
+  --sidebar-foreground: #ffffff;
 
-  --radius: 12px;
+  /* Silver accent for borders */
+  --silver: #c0c0c0;
+  --silver-muted: #888888;
+
+  /* No rounded corners */
+  --radius: 0px;
 }
 
 @layer base {
   * {
     box-sizing: border-box;
+    border-color: var(--border);
   }
 
   html, body, #__next {
@@ -38,60 +48,200 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Focus visible */
+  /* Focus visible - sharp outline */
   :focus-visible {
-    outline: 2px solid var(--ring);
+    outline: 1px solid var(--ring);
     outline-offset: 2px;
+  }
+
+  /* Remove default button styles */
+  button {
+    border-radius: 0;
+  }
+
+  /* Remove default input styles */
+  input, textarea, select {
+    border-radius: 0;
   }
 }
 
 @layer components {
+  /* Card - sharp edges, silver border */
   .card {
     background: var(--card);
     color: var(--card-foreground);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+    border-radius: 0;
   }
 
+  /* Button base - sharp edges */
   .btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.95rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0;
+    font-weight: 500;
+    font-size: 0.875rem;
     background: var(--primary);
     color: var(--primary-foreground);
-    border: 1px solid transparent;
+    border: 1px solid var(--primary);
+    transition: all 150ms ease;
+    cursor: pointer;
   }
 
+  .btn:hover {
+    background: transparent;
+    color: var(--primary);
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Ghost button */
   .btn-ghost {
     background: transparent;
     color: var(--foreground);
     border: 1px solid transparent;
   }
 
+  .btn-ghost:hover {
+    background: var(--accent);
+    border-color: var(--border);
+  }
+
+  /* Outline button */
   .btn-outline {
     background: transparent;
     border: 1px solid var(--border);
     color: var(--foreground);
   }
 
+  .btn-outline:hover {
+    background: var(--foreground);
+    color: var(--background);
+    border-color: var(--foreground);
+  }
+
+  /* Secondary button */
+  .btn-secondary {
+    background: var(--secondary);
+    color: var(--secondary-foreground);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover {
+    background: var(--accent);
+    border-color: var(--silver-muted);
+  }
+
+  /* Destructive button */
+  .btn-destructive {
+    background: transparent;
+    color: #ff4444;
+    border: 1px solid #ff4444;
+  }
+
+  .btn-destructive:hover {
+    background: #ff4444;
+    color: #000000;
+  }
+
+  /* Input - sharp edges */
   .input {
     background: var(--input);
     color: var(--foreground);
     border: 1px solid var(--border);
-    padding: 0.5rem 0.75rem;
-    border-radius: 8px;
+    padding: 0.625rem 0.75rem;
+    border-radius: 0;
     width: 100%;
+    font-size: 0.875rem;
+    transition: border-color 150ms ease;
   }
 
-  .muted { color: var(--muted-foreground); }
+  .input::placeholder {
+    color: var(--muted-foreground);
+  }
+
+  .input:focus {
+    border-color: var(--silver);
+    outline: none;
+  }
+
+  .input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Label */
+  .label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--foreground);
+  }
+
+  /* Muted text */
+  .muted {
+    color: var(--muted-foreground);
+  }
+
+  /* Silver border accent */
+  .border-silver {
+    border-color: var(--silver);
+  }
+
+  /* Badge */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--foreground);
+  }
+
+  .badge-success {
+    border-color: #22c55e;
+    color: #22c55e;
+  }
+
+  .badge-warning {
+    border-color: #eab308;
+    color: #eab308;
+  }
+
+  .badge-error {
+    border-color: #ef4444;
+    color: #ef4444;
+  }
 }
 
-/* Simple scrollbar matching palette */
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
+/* Scrollbar - minimal monochrome */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--silver-muted);
+}
+
+/* Selection */
+::selection {
+  background: var(--foreground);
+  color: var(--background);
+}
