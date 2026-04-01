@@ -2,6 +2,11 @@ import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import fetch from 'node-fetch';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+
+// Load env from project root (E2E tests need Firebase Admin credentials)
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 // This helper is intended for local E2E automation only. It requires
 // Firebase Admin credentials via environment variables. Do NOT commit
@@ -34,17 +39,24 @@ export async function ensureTestUser(opts: {
   const { uid, email, displayName, photoURL } = opts;
   const role = opts.role || 'superadmin';
   const competitionIds = opts.competitionIds || [];
+  
+  // Normalize photoURL - must be undefined (not empty string or null)
+  const normalizedPhotoURL = photoURL && photoURL.length > 0 ? photoURL : undefined;
 
   // Ensure Auth user exists
   try {
-    await auth.getUser(uid);
+    const existingUser = await auth.getUser(uid);
+    // If user exists, update only if we have valid photoURL
+    if (existingUser && normalizedPhotoURL) {
+      await auth.updateUser(uid, { photoURL: normalizedPhotoURL });
+    }
   } catch (err) {
-    // Create user if not found
+    // User doesn't exist, create new one
     await auth.createUser({
       uid,
       email,
       displayName: displayName || email.split('@')[0],
-      photoURL: photoURL || null,
+      photoURL: normalizedPhotoURL,
       emailVerified: true,
     });
   }
@@ -59,7 +71,7 @@ export async function ensureTestUser(opts: {
       uid,
       email,
       displayName: displayName || email.split('@')[0],
-      photoURL: photoURL || null,
+      photoURL: normalizedPhotoURL || null,
       role,
       competitionIds,
       lastLoginAt: new Date().toISOString(),
