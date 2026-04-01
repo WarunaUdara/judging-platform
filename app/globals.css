@@ -1,9 +1,40 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-:root {
+@theme {
   /* Monochrome palette: black, white, silver */
+  --color-background: #000000;
+  --color-foreground: #ffffff;
+  --color-card: #0a0a0a;
+  --color-card-foreground: #ffffff;
+  --color-primary: #ffffff;
+  --color-primary-foreground: #000000;
+  --color-secondary: #171717;
+  --color-secondary-foreground: #ffffff;
+  --color-muted: #171717;
+  --color-muted-foreground: #a1a1aa;
+  --color-accent: #262626;
+  --color-accent-foreground: #ffffff;
+  --color-border: #333333;
+  --color-input: #0a0a0a;
+  --color-ring: #ffffff;
+  --color-sidebar: #0a0a0a;
+  --color-sidebar-foreground: #ffffff;
+  --color-silver: #c0c0c0;
+  --color-silver-muted: #71717a;
+  
+  /* CTA Colors */
+  --color-cta: #8b5cf6;
+  --color-cta-hover: #7c3aed;
+  
+  /* No rounded corners */
+  --radius-none: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+}
+
+/* CSS Variables for legacy support */
+:root {
   --background: #000000;
   --foreground: #ffffff;
   --card: #0a0a0a;
@@ -13,20 +44,16 @@
   --secondary: #171717;
   --secondary-foreground: #ffffff;
   --muted: #171717;
-  --muted-foreground: #a1a1a1;
+  --muted-foreground: #a1a1aa;
   --accent: #262626;
   --accent-foreground: #ffffff;
   --border: #333333;
   --input: #0a0a0a;
   --ring: #ffffff;
-  --sidebar: #0a0a0a;
-  --sidebar-foreground: #ffffff;
-
-  /* Silver accent for borders */
   --silver: #c0c0c0;
-  --silver-muted: #888888;
-
-  /* No rounded corners */
+  --silver-muted: #71717a;
+  --cta: #8b5cf6;
+  --cta-hover: #7c3aed;
   --radius: 0px;
 }
 
@@ -36,37 +63,70 @@
     border-color: var(--border);
   }
 
-  html, body, #__next {
+  html {
     height: 100%;
   }
 
   body {
-    font-family: var(--font-sans, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial);
+    min-height: 100%;
+    font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     background: var(--background);
     color: var(--foreground);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    line-height: 1.6;
   }
 
   /* Focus visible - sharp outline */
   :focus-visible {
-    outline: 1px solid var(--ring);
+    outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
 
-  /* Remove default button styles */
-  button {
+  /* Remove default border-radius */
+  button, input, textarea, select {
     border-radius: 0;
   }
 
-  /* Remove default input styles */
-  input, textarea, select {
-    border-radius: 0;
+  /* Headings */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  h1 {
+    font-size: 3rem;
+  }
+
+  h2 {
+    font-size: 2rem;
+  }
+
+  h3 {
+    font-size: 1.25rem;
   }
 }
 
 @layer components {
-  /* Card - sharp edges, silver border */
+  /* Container */
+  .container {
+    width: 100%;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .container {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+  }
+
+  /* Card - sharp edges */
   .card {
     background: var(--card);
     color: var(--card-foreground);
@@ -80,15 +140,17 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.625rem 1.25rem;
+    padding: 0.75rem 1.5rem;
     border-radius: 0;
-    font-weight: 500;
-    font-size: 0.875rem;
+    font-weight: 600;
+    font-size: 0.9375rem;
     background: var(--primary);
     color: var(--primary-foreground);
-    border: 1px solid var(--primary);
+    border: 2px solid var(--primary);
     transition: all 150ms ease;
     cursor: pointer;
+    text-transform: none;
+    letter-spacing: 0;
   }
 
   .btn:hover {
@@ -101,11 +163,27 @@
     cursor: not-allowed;
   }
 
+  /* CTA Button - prominent */
+  .btn-cta {
+    background: var(--cta);
+    color: #ffffff;
+    border: 2px solid var(--cta);
+    font-weight: 700;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+  }
+
+  .btn-cta:hover {
+    background: var(--cta-hover);
+    border-color: var(--cta-hover);
+    color: #ffffff;
+  }
+
   /* Ghost button */
   .btn-ghost {
     background: transparent;
     color: var(--foreground);
-    border: 1px solid transparent;
+    border: 2px solid transparent;
   }
 
   .btn-ghost:hover {
@@ -116,7 +194,7 @@
   /* Outline button */
   .btn-outline {
     background: transparent;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     color: var(--foreground);
   }
 
@@ -130,7 +208,7 @@
   .btn-secondary {
     background: var(--secondary);
     color: var(--secondary-foreground);
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
   }
 
   .btn-secondary:hover {
@@ -141,12 +219,12 @@
   /* Destructive button */
   .btn-destructive {
     background: transparent;
-    color: #ff4444;
-    border: 1px solid #ff4444;
+    color: #ef4444;
+    border: 2px solid #ef4444;
   }
 
   .btn-destructive:hover {
-    background: #ff4444;
+    background: #ef4444;
     color: #000000;
   }
 
@@ -155,10 +233,10 @@
     background: var(--input);
     color: var(--foreground);
     border: 1px solid var(--border);
-    padding: 0.625rem 0.75rem;
+    padding: 0.75rem 1rem;
     border-radius: 0;
     width: 100%;
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
     transition: border-color 150ms ease;
   }
 
@@ -180,29 +258,26 @@
   .label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--foreground);
-  }
-
-  /* Muted text */
-  .muted {
     color: var(--muted-foreground);
   }
 
-  /* Silver border accent */
-  .border-silver {
-    border-color: var(--silver);
+  /* Muted text */
+  .text-muted {
+    color: var(--muted-foreground);
   }
 
   /* Badge */
   .badge {
     display: inline-flex;
     align-items: center;
-    padding: 0.25rem 0.625rem;
+    padding: 0.25rem 0.75rem;
     font-size: 0.75rem;
-    font-weight: 500;
+    font-weight: 600;
     border: 1px solid var(--border);
     background: transparent;
     color: var(--foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
   .badge-success {
@@ -219,6 +294,39 @@
     border-color: #ef4444;
     color: #ef4444;
   }
+
+  /* Feature card for landing page */
+  .feature-card {
+    padding: 2rem;
+    border: 1px solid var(--border);
+    background: var(--card);
+    transition: border-color 200ms ease;
+  }
+
+  .feature-card:hover {
+    border-color: var(--silver-muted);
+  }
+
+  .feature-number {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--silver);
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+  }
+
+  .feature-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--foreground);
+    margin-bottom: 0.75rem;
+  }
+
+  .feature-description {
+    font-size: 0.9375rem;
+    color: var(--muted-foreground);
+    line-height: 1.6;
+  }
 }
 
 /* Scrollbar - minimal monochrome */
@@ -233,7 +341,6 @@
 
 ::-webkit-scrollbar-thumb {
   background: var(--border);
-  border-radius: 0;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -244,4 +351,20 @@
 ::selection {
   background: var(--foreground);
   color: var(--background);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
 }

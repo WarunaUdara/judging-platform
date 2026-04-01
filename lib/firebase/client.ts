@@ -1,7 +1,7 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, connectAuthEmulator } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
-import { getDatabase, connectDatabaseEmulator } from 'firebase/database';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import { getDatabase } from 'firebase/database';
 
 const config = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -18,23 +18,3 @@ const app = getApps().length === 0 ? initializeApp(config) : getApps()[0];
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const rtdb = getDatabase(app);
-
-if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-  try {
-    connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
-  } catch (e) {
-    // Emulator already connected
-  }
-  
-  try {
-    connectFirestoreEmulator(db, 'localhost', 8080);
-  } catch (e) {
-    // Emulator already connected
-  }
-  
-  try {
-    connectDatabaseEmulator(rtdb, 'localhost', 9000);
-  } catch (e) {
-    // Emulator already connected
-  }
-}

@@ -19,11 +19,13 @@ const buttonVariants = cva(
         destructive:
           'bg-transparent text-[#ff4444] border-[#ff4444] hover:bg-[#ff4444] hover:text-black',
         link: 'bg-transparent border-transparent text-white underline-offset-4 hover:underline',
+        cta: 'bg-[#8b5cf6] text-white border-[#8b5cf6] font-bold hover:bg-[#7c3aed] hover:border-[#7c3aed]',
       },
       size: {
         default: 'h-10 px-5 py-2',
         sm: 'h-8 px-3 text-xs',
         lg: 'h-12 px-8 text-base',
+        xl: 'h-14 px-10 text-lg',
         icon: 'h-10 w-10',
       },
     },
