@@ -1,29 +1,35 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '@/lib/firebase/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import Link from 'next/link';
-import toast from 'react-hot-toast';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { auth } from "@/lib/firebase/client";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import Link from "next/link";
+import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const createSession = async (idToken: string) => {
-    const response = await fetch('/api/auth/session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await fetch("/api/auth/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ idToken }),
     });
 
     const data = await response.json();
-    
+
     if (!response.ok) {
-      throw new Error(data.error || 'Failed to create session');
+      throw new Error(data.error || "Failed to create session");
     }
 
     return data;
@@ -31,18 +37,19 @@ export default function LoginPage() {
 
   const redirectByRole = (role: string) => {
     switch (role) {
-      case 'superadmin':
-      case 'organizer':
-        router.push('/admin');
+      case "superadmin":
+      case "organizer":
+        router.push("/admin");
         break;
-      case 'evaluator':
-        router.push('/judge/dashboard');
+      case "evaluator":
+        router.push("/judge/dashboard");
         break;
-      case 'pending':
-        toast.error('Your account is pending approval. Contact an organizer.');
+      case "pending":
+        toast.error("Your account is pending approval. Contact an organizer.");
+        router.push("/");
         break;
       default:
-        router.push('/');
+        router.push("/");
     }
   };
 
@@ -52,50 +59,53 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({
-        prompt: 'select_account'
+        prompt: "select_account",
       });
-      
+
       const userCredential = await signInWithPopup(auth, provider);
       const idToken = await userCredential.user.getIdToken();
-      
+
       const sessionData = await createSession(idToken);
-      
-      if (sessionData.role === 'pending') {
-        toast('Account created! Please wait for an organizer to approve your access.', {
-          icon: '?',
-          duration: 5000,
-        });
+
+      if (sessionData.role === "pending") {
+        toast(
+          "Account created! Please wait for an organizer to approve your access.",
+          {
+            icon: "?",
+            duration: 5000,
+          },
+        );
       } else {
-        toast.success('Welcome back!');
+        toast.success("Welcome back!");
       }
-      
+
       redirectByRole(sessionData.role);
     } catch (error: unknown) {
-      console.error('Google login error:', error);
-      
+      console.error("Google login error:", error);
+
       // Handle specific Firebase Auth errors
       const errorCode = (error as { code?: string })?.code;
-      let message = 'Failed to sign in with Google';
-      
+      let message = "Failed to sign in with Google";
+
       switch (errorCode) {
-        case 'auth/popup-closed-by-user':
-          message = 'Sign in was cancelled';
+        case "auth/popup-closed-by-user":
+          message = "Sign in was cancelled";
           break;
-        case 'auth/popup-blocked':
-          message = 'Popup was blocked. Please allow popups for this site.';
+        case "auth/popup-blocked":
+          message = "Popup was blocked. Please allow popups for this site.";
           break;
-        case 'auth/cancelled-popup-request':
-          message = 'Another sign in attempt is in progress';
+        case "auth/cancelled-popup-request":
+          message = "Another sign in attempt is in progress";
           break;
-        case 'auth/network-request-failed':
-          message = 'Network error. Please check your connection.';
+        case "auth/network-request-failed":
+          message = "Network error. Please check your connection.";
           break;
         default:
           if (error instanceof Error) {
             message = error.message;
           }
       }
-      
+
       toast.error(message);
     } finally {
       setLoading(false);
@@ -137,8 +147,20 @@ export default function LoginPage() {
               {loading ? (
                 <span className="flex items-center gap-2">
                   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
                   </svg>
                   Signing in...
                 </span>
@@ -183,13 +205,14 @@ export default function LoginPage() {
                 New users will be created with pending status.
               </p>
               <p className="text-sm text-[#71717a]">
-                Contact your event organizer for access approval or use an invitation link.
+                Contact your event organizer for access approval or use an
+                invitation link.
               </p>
             </div>
 
             <div className="pt-4 border-t border-[#333333]">
               <p className="text-center text-xs text-[#71717a]">
-                Have an invitation link?{' '}
+                Have an invitation link?{" "}
                 <span className="text-[#a1a1aa]">
                   Click it to join a competition directly.
                 </span>

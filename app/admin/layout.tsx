@@ -1,28 +1,55 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
-import { useAuth } from '@/components/auth-provider';
-import { Button } from '@/components/ui/button';
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+import { useAuth } from "@/components/auth-provider";
+import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
   Trophy,
   Users,
   UserCheck,
   BarChart3,
+  UserPlus,
   LogOut,
   Menu,
   X,
-} from 'lucide-react';
-import toast from 'react-hot-toast';
+} from "lucide-react";
+import toast from "react-hot-toast";
 
 const navigation = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'Competitions', href: '/admin/competitions', icon: Trophy },
-  { name: 'Teams', href: '/admin/teams', icon: Users },
-  { name: 'Evaluators', href: '/admin/evaluators', icon: UserCheck },
-  { name: 'Leaderboard', href: '/admin/leaderboard', icon: BarChart3 },
+  {
+    name: "Dashboard",
+    href: "/admin",
+    icon: LayoutDashboard,
+    roles: ["superadmin"],
+  },
+  {
+    name: "Competitions",
+    href: "/admin/competitions",
+    icon: Trophy,
+    roles: ["superadmin"],
+  },
+  { name: "Teams", href: "/admin/teams", icon: Users, roles: ["superadmin"] },
+  {
+    name: "Evaluators",
+    href: "/admin/evaluators",
+    icon: UserCheck,
+    roles: ["superadmin"],
+  },
+  {
+    name: "Leaderboard",
+    href: "/admin/leaderboard",
+    icon: BarChart3,
+    roles: ["superadmin"],
+  },
+  {
+    name: "Registrations",
+    href: "/admin/pending",
+    icon: UserPlus,
+    roles: ["superadmin", "organizer"],
+  },
 ];
 
 export default function AdminLayout({
@@ -36,19 +63,22 @@ export default function AdminLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (!loading && (!user || (role !== 'superadmin' && role !== 'organizer'))) {
-      router.push('/login');
+    if (
+      !loading &&
+      (!user || (role !== "superadmin" && role !== "organizer"))
+    ) {
+      router.push("/login");
     }
   }, [user, role, loading, router]);
 
   const handleLogout = async () => {
     try {
       await signOut();
-      router.push('/login');
-      toast.success('Signed out');
+      router.push("/login");
+      toast.success("Signed out");
     } catch (error) {
-      console.error('Logout error:', error);
-      toast.error('Failed to sign out');
+      console.error("Logout error:", error);
+      toast.error("Failed to sign out");
     }
   };
 
@@ -60,7 +90,7 @@ export default function AdminLayout({
     );
   }
 
-  if (!user || (role !== 'superadmin' && role !== 'organizer')) {
+  if (!user || (role !== "superadmin" && role !== "organizer")) {
     return null;
   }
 
@@ -77,7 +107,7 @@ export default function AdminLayout({
       {/* Sidebar */}
       <aside
         className={`fixed top-0 left-0 z-50 h-full w-64 bg-[#0a0a0a] border-r border-[#333333] transform transition-transform lg:translate-x-0 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* Sidebar header */}
@@ -97,31 +127,33 @@ export default function AdminLayout({
 
         {/* Navigation */}
         <nav className="p-4 space-y-1">
-          {navigation.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex items-center gap-3 px-3 py-2 text-sm transition-colors ${
-                  isActive
-                    ? 'bg-white text-black'
-                    : 'text-[#a1a1a1] hover:text-white hover:bg-[#171717]'
-                }`}
-                onClick={() => setSidebarOpen(false)}
-              >
-                <item.icon className="w-4 h-4" />
-                {item.name}
-              </Link>
-            );
-          })}
+          {navigation
+            .filter((item) => role && item.roles.includes(role))
+            .map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-3 py-2 text-sm transition-colors ${
+                    isActive
+                      ? "bg-white text-black"
+                      : "text-[#a1a1a1] hover:text-white hover:bg-[#171717]"
+                  }`}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <item.icon className="w-4 h-4" />
+                  {item.name}
+                </Link>
+              );
+            })}
         </nav>
 
         {/* User section */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-[#333333]">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-8 h-8 bg-[#333333] flex items-center justify-center text-sm font-medium">
-              {user.email?.[0]?.toUpperCase() || 'U'}
+              {user.email?.[0]?.toUpperCase() || "U"}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm truncate">{user.email}</p>
