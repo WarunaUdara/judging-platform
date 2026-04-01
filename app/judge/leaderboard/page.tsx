@@ -6,11 +6,10 @@ import { db } from '@/lib/firebase/client';
 import { useAuth } from '@/components/auth-provider';
 import { useLeaderboard, LeaderboardEntry } from '@/lib/hooks/useLeaderboard';
 import { Card, CardContent } from '@/components/ui/card';
-import { Trophy } from 'lucide-react';
 import type { Competition } from '@/lib/types';
 
 export default function JudgeLeaderboardPage() {
-  const { claims } = useAuth();
+  const { competitionIds } = useAuth();
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [selectedCompetition, setSelectedCompetition] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -20,14 +19,14 @@ export default function JudgeLeaderboardPage() {
 
   useEffect(() => {
     const fetchCompetitions = async () => {
-      if (!claims?.competitionIds?.length) {
+      if (!competitionIds?.length) {
         setLoading(false);
         return;
       }
 
       try {
         const comps: Competition[] = [];
-        for (const compId of claims.competitionIds) {
+        for (const compId of competitionIds) {
           const compDoc = await getDoc(doc(db, 'competitions', compId));
           if (compDoc.exists()) {
             const comp = { id: compDoc.id, ...compDoc.data() } as Competition;
@@ -52,7 +51,7 @@ export default function JudgeLeaderboardPage() {
     };
 
     fetchCompetitions();
-  }, [claims]);
+  }, [competitionIds]);
 
   if (loading) {
     return (

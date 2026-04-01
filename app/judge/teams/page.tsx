@@ -15,7 +15,7 @@ interface TeamWithStatus extends Team {
 }
 
 export default function JudgeTeamsPage() {
-  const { user, claims } = useAuth();
+  const { user, competitionIds } = useAuth();
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [selectedCompetition, setSelectedCompetition] = useState<string>('');
   const [teams, setTeams] = useState<TeamWithStatus[]>([]);
@@ -24,14 +24,14 @@ export default function JudgeTeamsPage() {
 
   useEffect(() => {
     const fetchCompetitions = async () => {
-      if (!claims?.competitionIds?.length) {
+      if (!competitionIds?.length) {
         setLoading(false);
         return;
       }
 
       try {
         const comps: Competition[] = [];
-        for (const compId of claims.competitionIds) {
+        for (const compId of competitionIds) {
           const compDoc = await getDoc(doc(db, 'competitions', compId));
           if (compDoc.exists()) {
             comps.push({ id: compDoc.id, ...compDoc.data() } as Competition);
@@ -50,7 +50,7 @@ export default function JudgeTeamsPage() {
     };
 
     fetchCompetitions();
-  }, [claims]);
+  }, [competitionIds]);
 
   useEffect(() => {
     const fetchTeams = async () => {

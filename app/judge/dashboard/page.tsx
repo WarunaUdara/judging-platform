@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, CheckCircle, Clock, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import type { Competition, Team, Scorecard } from '@/lib/types';
+import type { Competition, Team } from '@/lib/types';
 
 interface DashboardStats {
   totalTeams: number;
@@ -17,7 +17,7 @@ interface DashboardStats {
 }
 
 export default function JudgeDashboard() {
-  const { user, claims } = useAuth();
+  const { user, competitionIds } = useAuth();
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [selectedCompetition, setSelectedCompetition] = useState<Competition | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
@@ -30,7 +30,7 @@ export default function JudgeDashboard() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!user || !claims?.competitionIds?.length) {
+      if (!user || !competitionIds?.length) {
         setLoading(false);
         return;
       }
@@ -38,7 +38,7 @@ export default function JudgeDashboard() {
       try {
         // Fetch competitions user has access to
         const comps: Competition[] = [];
-        for (const compId of claims.competitionIds) {
+        for (const compId of competitionIds) {
           const compDoc = await getDoc(doc(db, 'competitions', compId));
           if (compDoc.exists()) {
             comps.push({ id: compDoc.id, ...compDoc.data() } as Competition);
@@ -62,7 +62,7 @@ export default function JudgeDashboard() {
     };
 
     fetchData();
-  }, [user, claims]);
+  }, [user, competitionIds]);
 
   const fetchCompetitionData = async (competitionId: string) => {
     if (!user) return;

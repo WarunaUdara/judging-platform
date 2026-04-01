@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 
-export type UserRole = 'superadmin' | 'organizer' | 'evaluator';
+export type UserRole = 'superadmin' | 'organizer' | 'evaluator' | 'pending';
 export type CompetitionStatus = 'draft' | 'active' | 'scoring' | 'closed';
 export type CompetitionType = 'hackathon' | 'designathon' | 'custom';
 export type ScorecardStatus = 'draft' | 'submitted';

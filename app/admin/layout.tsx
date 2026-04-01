@@ -15,8 +15,6 @@ import {
   Menu,
   X,
 } from 'lucide-react';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase/client';
 import toast from 'react-hot-toast';
 
 const navigation = [
@@ -32,11 +30,10 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, claims, loading } = useAuth();
+  const { user, role, loading, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const role = claims?.role;
 
   useEffect(() => {
     if (!loading && (!user || (role !== 'superadmin' && role !== 'organizer'))) {
@@ -46,8 +43,7 @@ export default function AdminLayout({
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/session', { method: 'DELETE' });
-      await signOut(auth);
+      await signOut();
       router.push('/login');
       toast.success('Signed out');
     } catch (error) {

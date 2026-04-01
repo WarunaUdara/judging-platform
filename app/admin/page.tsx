@@ -3,12 +3,11 @@
 import { useEffect, useState } from 'react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
-import { useAuth } from '@/components/auth-provider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Trophy, Users, UserCheck, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import type { Competition, Team } from '@/lib/types';
+import type { Competition } from '@/lib/types';
 
 interface DashboardStats {
   competitions: number;
@@ -18,7 +17,6 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
-  const { claims } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     competitions: 0,
     activeCompetitions: 0,

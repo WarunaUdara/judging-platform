@@ -15,7 +15,7 @@ import toast from 'react-hot-toast';
 
 export default function NewCompetitionPage() {
   const router = useRouter();
-  const { user, claims } = useAuth();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -54,7 +54,7 @@ export default function NewCompetitionPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !claims?.orgId) {
+    if (!user) {
       toast.error('Not authenticated');
       return;
     }
@@ -64,7 +64,7 @@ export default function NewCompetitionPage() {
     try {
       const docRef = await addDoc(collection(db, 'competitions'), {
         ...formData,
-        orgId: claims.orgId,
+        orgId: 'default', // Single org for now
         status: 'draft',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),

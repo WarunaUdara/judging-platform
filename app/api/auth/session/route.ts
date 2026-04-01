@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/firebase/admin';
+import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { SessionResponse } from '@/lib/types';
 
 /**
@@ -12,15 +12,68 @@ export async function POST(request: NextRequest) {
     const { idToken } = body;
 
     if (!idToken) {
-      return NextResponse.json({ error: 'Missing idToken' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Missing idToken' }, 
+        { status: 400 }
+      );
     }
 
     // Verify the ID token
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    let decodedToken;
+    try {
+      decodedToken = await adminAuth.verifyIdToken(idToken);
+    } catch (verifyError) {
+      console.error('Token verification failed:', verifyError);
+      return NextResponse.json(
+        { error: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+
+    // Check if user exists in our users collection, create if not
+    const userRef = adminDb.collection('users').doc(decodedToken.uid);
+    const userDoc = await userRef.get();
+    
+    let userRole = decodedToken.role || 'pending';
+    let competitionIds: string[] = decodedToken.competitionIds || [];
+    
+    if (!userDoc.exists) {
+      // First time user - create user document
+      await userRef.set({
+        uid: decodedToken.uid,
+        email: decodedToken.email || '',
+        displayName: decodedToken.name || decodedToken.email?.split('@')[0] || 'User',
+        photoURL: decodedToken.picture || null,
+        role: 'pending', // New users start as pending
+        competitionIds: [],
+        createdAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+      });
+      userRole = 'pending';
+    } else {
+      // Existing user - update last login and get current role
+      const userData = userDoc.data();
+      userRole = userData?.role || 'pending';
+      competitionIds = userData?.competitionIds || [];
+      
+      await userRef.update({
+        lastLoginAt: new Date().toISOString(),
+      });
+    }
 
     // Create session cookie (expires in 14 days)
     const expiresIn = 60 * 60 * 24 * 14 * 1000; // 14 days in ms
-    const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
+    
+    let sessionCookie;
+    try {
+      sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
+    } catch (cookieError) {
+      console.error('Session cookie creation failed:', cookieError);
+      return NextResponse.json(
+        { error: 'Failed to create session cookie' },
+        { status: 500 }
+      );
+    }
 
     // Set cookie options
     const options = {
@@ -28,13 +81,13 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       path: '/',
-      sameSite: 'strict' as const,
+      sameSite: 'lax' as const, // Changed from strict to lax for better compatibility
     };
 
     const response = NextResponse.json<SessionResponse>({
       success: true,
-      role: decodedToken.role || 'evaluator',
-      competitionIds: decodedToken.competitionIds || [],
+      role: userRole,
+      competitionIds: competitionIds,
       uid: decodedToken.uid,
     });
 
@@ -45,9 +98,41 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Session creation error:', error);
     return NextResponse.json(
-      { error: 'Failed to create session' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * GET /api/auth/session
+ * Check current session status
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const sessionCookie = request.cookies.get('session')?.value;
+
+    if (!sessionCookie) {
+      return NextResponse.json({ authenticated: false }, { status: 401 });
+    }
+
+    // Verify the session cookie
+    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true);
+    
+    // Get user data from Firestore
+    const userDoc = await adminDb.collection('users').doc(decodedClaims.uid).get();
+    const userData = userDoc.data();
+
+    return NextResponse.json({
+      authenticated: true,
+      uid: decodedClaims.uid,
+      email: decodedClaims.email,
+      role: userData?.role || 'pending',
+      competitionIds: userData?.competitionIds || [],
+    });
+  } catch (error) {
+    console.error('Session verification error:', error);
+    return NextResponse.json({ authenticated: false }, { status: 401 });
   }
 }
 

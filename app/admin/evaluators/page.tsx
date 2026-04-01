@@ -1,18 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
-import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Mail, Copy, Check, UserX } from 'lucide-react';
+import { Plus, Copy, Check, UserX } from 'lucide-react';
 import type { Competition, Evaluator, CreateInvitationResponse } from '@/lib/types';
 import toast from 'react-hot-toast';
 
 export default function EvaluatorsPage() {
-  const { claims } = useAuth();
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [selectedCompetition, setSelectedCompetition] = useState<string>('');
   const [evaluators, setEvaluators] = useState<Evaluator[]>([]);
@@ -21,7 +19,6 @@ export default function EvaluatorsPage() {
   // Invite form
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'evaluator' | 'head_judge'>('evaluator');
   const [inviting, setInviting] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -74,7 +71,7 @@ export default function EvaluatorsPage() {
   }, [selectedCompetition]);
 
   const handleInvite = async () => {
-    if (!inviteEmail || !selectedCompetition || !claims?.orgId) {
+    if (!inviteEmail || !selectedCompetition) {
       toast.error('Missing required fields');
       return;
     }
@@ -89,7 +86,7 @@ export default function EvaluatorsPage() {
           email: inviteEmail,
           role: 'evaluator',
           competitionId: selectedCompetition,
-          orgId: claims.orgId,
+          orgId: 'default', // Single org for now
         }),
       });
 
