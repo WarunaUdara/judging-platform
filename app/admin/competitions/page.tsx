@@ -1,39 +1,49 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, MoreVertical, Trash2, Edit, Eye } from 'lucide-react';
-import Link from 'next/link';
-import type { Competition } from '@/lib/types';
-import toast from 'react-hot-toast';
+import { useEffect, useState } from "react";
+import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Plus, MoreVertical, Trash2, Edit, Eye } from "lucide-react";
+import Link from "next/link";
+import type { Competition } from "@/lib/types";
+import toast from "react-hot-toast";
 
 export default function CompetitionsPage() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
 
+  // Custom dialog state
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    id: string | null;
+  }>({
+    isOpen: false,
+    id: null,
+  });
+
   const fetchCompetitions = async () => {
     try {
-      const snapshot = await getDocs(collection(db, 'competitions'));
+      const snapshot = await getDocs(collection(db, "competitions"));
       const comps = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as Competition[];
-      
+
       // Sort by createdAt descending
       comps.sort((a, b) => {
         const aTime = a.createdAt?.toMillis?.() || 0;
         const bTime = b.createdAt?.toMillis?.() || 0;
         return bTime - aTime;
       });
-      
+
       setCompetitions(comps);
     } catch (error) {
-      console.error('Error fetching competitions:', error);
-      toast.error('Failed to load competitions');
+      console.error("Error fetching competitions:", error);
+      toast.error("Failed to load competitions");
     } finally {
       setLoading(false);
     }
@@ -43,29 +53,36 @@ export default function CompetitionsPage() {
     fetchCompetitions();
   }, []);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this competition?')) return;
-    
+  const confirmDelete = (id: string) => {
+    setDeleteDialog({ isOpen: true, id });
+  };
+
+  const handleDelete = async () => {
+    const { id } = deleteDialog;
+    if (!id) return;
+
     try {
-      await deleteDoc(doc(db, 'competitions', id));
+      await deleteDoc(doc(db, "competitions", id));
       setCompetitions((prev) => prev.filter((c) => c.id !== id));
-      toast.success('Competition deleted');
+      toast.success("Competition deleted");
     } catch (error) {
-      console.error('Error deleting competition:', error);
-      toast.error('Failed to delete competition');
+      console.error("Error deleting competition:", error);
+      toast.error("Failed to delete competition");
+    } finally {
+      setDeleteDialog({ isOpen: false, id: null });
     }
   };
 
-  const getStatusStyle = (status: Competition['status']) => {
+  const getStatusStyle = (status: Competition["status"]) => {
     switch (status) {
-      case 'active':
-        return 'border-white text-white';
-      case 'scoring':
-        return 'border-[#c0c0c0] text-[#c0c0c0]';
-      case 'closed':
-        return 'border-[#888888] text-[#888888]';
+      case "active":
+        return "border-white text-white";
+      case "scoring":
+        return "border-[#c0c0c0] text-[#c0c0c0]";
+      case "closed":
+        return "border-[#888888] text-[#888888]";
       default:
-        return 'border-[#333333] text-[#888888]';
+        return "border-[#333333] text-[#888888]";
     }
   };
 
@@ -130,7 +147,7 @@ export default function CompetitionsPage() {
                   {comp.name}
                 </Link>
                 <p className="text-xs text-[#888888] mt-1 truncate">
-                  {comp.description || 'No description'}
+                  {comp.description || "No description"}
                 </p>
               </div>
               <div className="col-span-2 capitalize text-sm text-[#a1a1a1]">
@@ -139,14 +156,14 @@ export default function CompetitionsPage() {
               <div className="col-span-2">
                 <span
                   className={`text-xs px-2 py-1 border ${getStatusStyle(
-                    comp.status
+                    comp.status,
                   )}`}
                 >
                   {comp.status}
                 </span>
               </div>
               <div className="col-span-2 text-sm text-[#888888]">
-                {comp.createdAt?.toDate?.()?.toLocaleDateString() || '-'}
+                {comp.createdAt?.toDate?.()?.toLocaleDateString() || "-"}
               </div>
               <div className="col-span-2 flex justify-end gap-2 relative">
                 <Link href={`/admin/competitions/${comp.id}`}>
@@ -162,7 +179,7 @@ export default function CompetitionsPage() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => handleDelete(comp.id)}
+                  onClick={() => confirmDelete(comp.id)}
                   className="text-[#ff4444] hover:text-[#ff4444] hover:bg-[#ff4444]/10"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -172,6 +189,16 @@ export default function CompetitionsPage() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={deleteDialog.isOpen}
+        title="Delete Competition"
+        description="Are you sure you want to delete this competition? This action cannot be undone."
+        confirmText="Delete"
+        isDestructive={true}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteDialog({ isOpen: false, id: null })}
+      />
     </div>
   );
 }
