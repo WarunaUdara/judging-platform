@@ -7,7 +7,7 @@ import { auth } from '@/lib/firebase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Mail, Lock, Chrome } from 'lucide-react';
+import { Trophy, Mail, Lock, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
@@ -111,7 +111,7 @@ export default function LoginPage() {
               onClick={handleGoogleLogin}
               disabled={loading}
             >
-              <Chrome className="w-5 h-5 mr-2" />
+              <LogIn className="w-5 h-5 mr-2" />
               Sign in with Google
             </Button>
 
