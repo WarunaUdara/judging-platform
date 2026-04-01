@@ -14,6 +14,9 @@ import {
   LogOut,
   Menu,
   X,
+  FileSpreadsheet,
+  ClipboardList,
+  Building2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -22,7 +25,10 @@ const navigation = [
   { name: 'Competitions', href: '/admin/competitions', icon: Trophy },
   { name: 'Teams', href: '/admin/teams', icon: Users },
   { name: 'Evaluators', href: '/admin/evaluators', icon: UserCheck },
+  { name: 'Scorecards', href: '/admin/scorecards', icon: FileSpreadsheet },
   { name: 'Leaderboard', href: '/admin/leaderboard', icon: BarChart3 },
+  { name: 'Audit Log', href: '/admin/audit-log', icon: ClipboardList },
+  { name: 'Organisations', href: '/admin/organisations', icon: Building2 },
 ];
 
 export default function AdminLayout({
