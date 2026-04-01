@@ -44,7 +44,7 @@ export default function HomePage() {
                 </Button>
               </Link>
               <Link href="#features">
-                <Button variant="outline" size="lg">
+                <Button variant="outline" size="xl">
                   Learn More
                 </Button>
               </Link>
