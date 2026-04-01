@@ -3,15 +3,29 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function isSignedIn() { return request.auth != null; }
-    function hasRole(role) { return request.auth.token.role == role; }
+    function hasRole(role) { 
+      return request.auth.token.role == role || getUserRole() == role;
+    }
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    function getUserCompetitionIds() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.competitionIds;
+    }
     function isSuperAdmin() { return hasRole('superadmin'); }
     function isOrganizerFor(cid) {
-      return hasRole('organizer') && cid in request.auth.token.competitionIds;
+      return hasRole('organizer') && (cid in request.auth.token.competitionIds || cid in getUserCompetitionIds());
     }
     function isEvaluatorFor(cid) {
-      return hasRole('evaluator') && cid in request.auth.token.competitionIds;
+      return hasRole('evaluator') && (cid in request.auth.token.competitionIds || cid in getUserCompetitionIds());
     }
     function isAdminFor(cid) { return isSuperAdmin() || isOrganizerFor(cid); }
+
+    // Users collection - allow users to read their own doc
+    match /users/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow write: if false; // Only via Admin SDK
+    }
 
     match /organisations/{orgId} {
       allow read: if isSignedIn() && request.auth.token.orgId == orgId;
