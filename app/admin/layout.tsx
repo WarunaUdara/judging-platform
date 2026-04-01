@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import Image from "next/image";
 
 const navigation = [
   {
@@ -113,6 +114,13 @@ export default function AdminLayout({
         {/* Sidebar header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-[#333333]">
           <Link href="/admin" className="flex items-center gap-2">
+            <Image 
+              src="/logo.png" 
+              alt="CryptX Logo" 
+              width={28} 
+              height={28}
+              className="object-contain"
+            />
             <span className="font-semibold">CryptX</span>
             <span className="text-[#888888]">/</span>
             <span className="text-[#888888] text-sm">Admin</span>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 import { Button } from "@/components/ui/button";
@@ -117,7 +118,14 @@ export default function LoginPage() {
       {/* Header */}
       <header className="border-b border-[#333333] bg-black">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-3">
+            <Image 
+              src="/logo.png" 
+              alt="CryptX Logo" 
+              width={36} 
+              height={36}
+              className="object-contain"
+            />
             <span className="text-xl font-semibold tracking-tight">CryptX</span>
             <span className="text-[#333333]">/</span>
             <span className="text-[#888888]">Judging</span>

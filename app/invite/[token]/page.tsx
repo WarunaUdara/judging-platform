@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
+import Image from 'next/image';
 import toast from 'react-hot-toast';
 
 interface InviteData {
@@ -185,7 +186,14 @@ export default function AcceptInvitePage() {
       {/* Header */}
       <header className="border-b border-[#333333] bg-black">
         <div className="container mx-auto px-4 h-16 flex items-center">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-3">
+            <Image 
+              src="/logo.png" 
+              alt="CryptX Logo" 
+              width={32} 
+              height={32}
+              className="object-contain"
+            />
             <span className="text-xl font-semibold tracking-tight">CryptX</span>
             <span className="text-[#888888]">/</span>
             <span className="text-[#888888]">Judging</span>

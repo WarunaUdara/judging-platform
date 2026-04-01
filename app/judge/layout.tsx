@@ -7,6 +7,7 @@ import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
 import { LayoutDashboard, Users, BarChart3, LogOut, Menu, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Image from 'next/image';
 
 const navigation = [
   { name: 'Dashboard', href: '/judge/dashboard', icon: LayoutDashboard },
@@ -72,6 +73,13 @@ export default function JudgeLayout({
         {/* Sidebar header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-[#333333]">
           <Link href="/judge/dashboard" className="flex items-center gap-2">
+            <Image 
+              src="/logo.png" 
+              alt="CryptX Logo" 
+              width={28} 
+              height={28}
+              className="object-contain"
+            />
             <span className="font-semibold">CryptX</span>
             <span className="text-[#888888]">/</span>
             <span className="text-[#888888] text-sm">Judge</span>
