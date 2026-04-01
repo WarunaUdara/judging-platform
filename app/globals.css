@@ -1,65 +1,97 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme inline {
-  /* Dark theme colors */
-  --color-background: #000000;
-  --color-foreground: #ffffff;
-  --color-card: #0a0a0a;
-  --color-card-foreground: #ffffff;
-  --color-primary: #3b82f6;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #1f2937;
-  --color-secondary-foreground: #f3f4f6;
-  --color-accent: #10b981;
-  --color-accent-foreground: #ffffff;
-  --color-destructive: #ef4444;
-  --color-destructive-foreground: #ffffff;
-  --color-muted: #1a1a1a;
-  --color-muted-foreground: #9ca3af;
-  --color-border: #262626;
-  --color-input: #1a1a1a;
-  --color-ring: #3b82f6;
+:root {
+  /* Core palette provided by user (Next.js-like restrained palette) */
+  --background: oklch(0.1805 0.0155 101.8);
+  --foreground: oklch(0.9439 0.0011 17.18);
+  --card: oklch(0.2351 0.0115 91.75);
+  --card-foreground: oklch(0.9439 0.0011 17.18);
+  --primary: oklch(0.6522 0.2135 37.99);
+  --primary-foreground: oklch(0.98 0.016 73.684);
+  --muted: oklch(0.268 0.007 34.298);
+  --muted-foreground: oklch(0.709 0.01 56.259);
+  --border: oklch(0.2755 0.0126 100.48);
+  --input: oklch(1 0 0 / 10%);
+  --ring: oklch(0.2755 0.0126 100.48);
+  --sidebar: oklch(0.216 0.006 56.043);
+  --sidebar-foreground: oklch(0.9439 0.0011 17.18);
 
-  /* Typography */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  
-  /* Spacing */
-  --radius: 0.5rem;
+  --radius: 12px;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body, #__next {
+    height: 100%;
+  }
+
+  body {
+    font-family: var(--font-sans, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial);
+    background: var(--background);
+    color: var(--foreground);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Focus visible */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
 }
 
-body {
-  font-family: var(--font-sans);
-  background: #000000;
-  color: #ffffff;
+@layer components {
+  .card {
+    background: var(--card);
+    color: var(--card-foreground);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border: 1px solid transparent;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--foreground);
+    border: 1px solid transparent;
+  }
+
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--foreground);
+  }
+
+  .input {
+    background: var(--input);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    width: 100%;
+  }
+
+  .muted { color: var(--muted-foreground); }
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: #0a0a0a;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #262626;
-  border-radius: 5px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #404040;
-}
-
-/* Focus styles */
-*:focus-visible {
-  outline: 2px solid var(--color-ring);
-  outline-offset: 2px;
-}
+/* Simple scrollbar matching palette */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
