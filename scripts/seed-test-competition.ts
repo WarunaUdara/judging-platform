@@ -11,36 +11,23 @@
  * Run with: bun scripts/seed-test-competition.ts
  */
 
-import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
-// Validate required environment variables
-const requiredEnvVars = [
-  'FIREBASE_ADMIN_CLIENT_EMAIL',
-  'FIREBASE_ADMIN_PRIVATE_KEY',
-  'SEED_SUPERADMIN_EMAIL',
-];
+// Load environment variables
+dotenv.config({ path: path.join(__dirname, '..', '.env.local') });
 
-for (const envVar of requiredEnvVars) {
-  if (!process.env[envVar]) {
-    console.error(\`❌ Missing required environment variable: \${envVar}\`);
-    console.error('Please set this variable in your .env file');
-    process.exit(1);
-  }
-}
+const app = initializeApp({
+  credential: cert({
+    projectId: process.env.FIREBASE_ADMIN_PROJECT_ID!,
+    clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL!,
+    privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY!.replace(/\\n/g, '\n'),
+  }),
+});
 
-// Initialize Firebase Admin
-if (getApps().length === 0) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-  });
-}
-
-const db = getFirestore();
+const db = getFirestore(app);
 
 // University Category Criteria (matches CryptX 2.0 Marking-university.pdf)
 const UNIVERSITY_CRITERIA = [
@@ -173,10 +160,9 @@ async function seedTestCompetition() {
   console.log('Seeding Test Competition with mock data...\n');
 
   const now = Timestamp.now();
-  const adminEmail = process.env.SEED_SUPERADMIN_EMAIL!;
 
   try {
-    console.log('1 Creating Test Competition...');
+    console.log('1. Creating Test Competition...');
     const competitionRef = await db.collection('competitions').add({
       orgId: 'cryptx',
       name: 'Test Competition',
@@ -194,12 +180,12 @@ async function seedTestCompetition() {
       },
       createdAt: now,
       updatedAt: now,
-      createdBy: adminEmail,
+      createdBy: 'admin@cryptx.lk',
     });
 
-    console.log(\`   Competition created: \${competitionRef.id}\n\`);
+    console.log(`   Competition created: ${competitionRef.id}\n`);
 
-    console.log('2 Adding evaluation criteria...');
+    console.log('2. Adding evaluation criteria...');
     const criteriaRefs: any[] = [];
     const criteriaBatch = db.batch();
     
@@ -213,9 +199,9 @@ async function seedTestCompetition() {
     }
     
     await criteriaBatch.commit();
-    console.log(\`   Added \${UNIVERSITY_CRITERIA.length} criteria (Total: 100 points)\n\`);
+    console.log(`   Added ${UNIVERSITY_CRITERIA.length} criteria (Total: 100 points)\n`);
 
-    console.log('3 Creating evaluators...');
+    console.log('3. Creating evaluators...');
     const evaluatorIds: string[] = [];
     
     for (const evaluator of EVALUATORS) {
@@ -231,11 +217,11 @@ async function seedTestCompetition() {
         lastLoginAt: now.toDate().toISOString(),
       });
       evaluatorIds.push(evaluatorRef.id);
-      console.log(\`   Created: \${evaluator.displayName} (\${evaluator.email})\`);
+      console.log(`   Created: ${evaluator.displayName} (${evaluator.email})`);
     }
     console.log();
 
-    console.log('4 Creating mock teams...');
+    console.log('4. Creating mock teams...');
     const teamIds: string[] = [];
     
     for (const team of MOCK_TEAMS) {
@@ -250,11 +236,11 @@ async function seedTestCompetition() {
         updatedAt: now,
       });
       teamIds.push(teamRef.id);
-      console.log(\`   \${team.name}: \${team.projectName}\`);
+      console.log(`   ${team.name}: ${team.projectName}`);
     }
     console.log();
 
-    console.log('5 Generating mock evaluations...');
+    console.log('5. Generating mock evaluations...');
     let evaluationCount = 0;
     
     for (let teamIdx = 0; teamIdx < teamIds.length; teamIdx++) {
@@ -286,7 +272,7 @@ async function seedTestCompetition() {
             score: score,
             maxScore: criterion.maxScore,
             weight: criterion.weight,
-            comment: \`Good performance on \${criterion.name.toLowerCase()}\`,
+            comment: `Good performance on ${criterion.name.toLowerCase()}`,
             timestamp: now,
           });
         }
@@ -300,22 +286,22 @@ async function seedTestCompetition() {
       }
     }
     
-    console.log(\`   Generated \${evaluationCount} evaluations (\${MOCK_TEAMS.length} teams x 3 evaluators)\n\`);
+    console.log(`   Generated ${evaluationCount} evaluations (${MOCK_TEAMS.length} teams x 3 evaluators)\n`);
 
     console.log('Test Competition seeding completed!\n');
     console.log('Summary:');
-    console.log(\`   Competition ID: \${competitionRef.id}\`);
-    console.log(\`   Competition Name: Test Competition\`);
-    console.log(\`   Status: scoring (active)\`);
-    console.log(\`   Criteria: \${UNIVERSITY_CRITERIA.length} (100 points total)\`);
-    console.log(\`   Evaluators: \${EVALUATORS.length}\`);
-    console.log(\`   Teams: \${MOCK_TEAMS.length}\`);
-    console.log(\`   Evaluations: \${evaluationCount}\`);
+    console.log(`   Competition ID: ${competitionRef.id}`);
+    console.log(`   Competition Name: Test Competition`);
+    console.log(`   Status: scoring (active)`);
+    console.log(`   Criteria: ${UNIVERSITY_CRITERIA.length} (100 points total)`);
+    console.log(`   Evaluators: ${EVALUATORS.length}`);
+    console.log(`   Teams: ${MOCK_TEAMS.length}`);
+    console.log(`   Evaluations: ${evaluationCount}`);
     console.log();
     console.log('Next Steps:');
     console.log('   1. Visit http://localhost:3000/login');
     console.log('   2. Sign in as any evaluator:');
-    EVALUATORS.forEach(e => console.log(\`      - \${e.email}\`));
+    EVALUATORS.forEach(e => console.log(`      - ${e.email}`));
     console.log('   3. Navigate to Competitions -> Test Competition');
     console.log('   4. View Leaderboard to see rankings');
     console.log('   5. Test evaluation workflow: Select team -> Add scores -> Submit');
