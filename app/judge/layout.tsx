@@ -74,7 +74,7 @@ export default function JudgeLayout({
         <div className="h-16 flex items-center justify-between px-4 border-b border-[#333333]">
           <Link href="/judge/dashboard" className="flex items-center gap-2">
             <Image 
-              src="/logo.png" 
+              src="/logo.webp" 
               alt="CryptX Logo" 
               width={28} 
               height={28}

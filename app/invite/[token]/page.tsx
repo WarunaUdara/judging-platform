@@ -188,7 +188,7 @@ export default function AcceptInvitePage() {
         <div className="container mx-auto px-4 h-16 flex items-center">
           <Link href="/" className="flex items-center gap-3">
             <Image 
-              src="/logo.png" 
+              src="/logo.webp" 
               alt="CryptX Logo" 
               width={32} 
               height={32}

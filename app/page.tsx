@@ -11,7 +11,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Image 
-              src="/logo.png" 
+              src="/logo.webp" 
               alt="CryptX Logo" 
               width={40} 
               height={40}
