@@ -7,33 +7,71 @@
  * - Sample evaluators
  * - Sample teams
  * 
+ * Required environment variables:
+ * - NEXT_PUBLIC_FIREBASE_PROJECT_ID
+ * - FIREBASE_CLIENT_EMAIL
+ * - FIREBASE_PRIVATE_KEY
+ * - SEED_SUPERADMIN_UID (optional, defaults to generated UUID)
+ * - SEED_SUPERADMIN_EMAIL (required)
+ * - SEED_SUPERADMIN_NAME (required)
+ * 
  * Run with: bun run scripts/seed-database.ts
  */
 
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
+// Validate required environment variables
+const requiredEnvVars = [
+  'FIREBASE_ADMIN_CLIENT_EMAIL',
+  'FIREBASE_ADMIN_PRIVATE_KEY',
+  'SEED_SUPERADMIN_EMAIL',
+  'SEED_SUPERADMIN_NAME',
+];
+
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    console.error(`❌ Missing required environment variable: ${envVar}`);
+    console.error('Please set this variable in your .env file or pass it via CLI');
+    process.exit(1);
+  }
+}
+
 // Initialize Firebase Admin if not already initialized
 if (getApps().length === 0) {
   initializeApp({
     credential: cert({
       projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n'),
     }),
   });
 }
 
 const db = getFirestore();
 
-// Superadmin user data
+// Generate a stable UUID based on email hash if not provided
+function generateStableUID(email: string): string {
+  let hash = 0;
+  for (let i = 0; i < email.length; i++) {
+    const char = email.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  // Convert to UUID format (first 8 chars of hex, then standard UUID segments)
+  const hex = Math.abs(hash).toString(16).padStart(8, '0');
+  return `${hex.substring(0, 8)}${hex.substring(0, 4)}-4${hex.substring(4, 7)}-5${hex.substring(7, 10)}-${hex.substring(10, 12)}${hex.substring(12, 14)}-${hex.substring(14, 24)}`.substring(0, 24).padEnd(28, '0').substring(0, 28);
+}
+
+// Superadmin user data - from environment variables
+const SUPERADMIN_UID = process.env.SEED_SUPERADMIN_UID || generateStableUID(process.env.SEED_SUPERADMIN_EMAIL || '');
 const SUPERADMIN = {
-  uid: '87w0Ehi2ipSKAK0O9C4dbCJheoJ3',
-  email: 'warunaudarasam2003@gmail.com',
-  displayName: 'Waruna Udara',
+  uid: SUPERADMIN_UID,
+  email: process.env.SEED_SUPERADMIN_EMAIL,
+  displayName: process.env.SEED_SUPERADMIN_NAME,
   role: 'superadmin',
   competitionIds: [],
-  photoURL: 'https://lh3.googleusercontent.com/a/ACg8ocJGjOLZMVBdyMANMVVD-E0HQG4Uj7vGPL-nCrJfVPn6nrdz8BT0=s96-c',
+  photoURL: process.env.SEED_SUPERADMIN_PHOTO_URL || '',
   createdAt: new Date().toISOString(),
   lastLoginAt: new Date().toISOString(),
 };
