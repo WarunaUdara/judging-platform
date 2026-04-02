@@ -10,29 +10,47 @@ import { Timestamp } from 'firebase-admin/firestore';
 const TEST_ORG_ID = 'cryptx-org-1';
 const TEST_COMPETITION_ID = 'cryptx-hackathon-2024';
 
+// Validate environment variables
+const requiredEnvVars = [
+  'TEST_ADMIN_EMAIL',
+  'TEST_ADMIN_PASSWORD',
+  'TEST_EVALUATOR_EMAIL',
+  'TEST_EVALUATOR_PASSWORD',
+  'TEST_EVALUATOR2_EMAIL',
+  'TEST_EVALUATOR3_EMAIL',
+];
+
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    console.error(`❌ Missing required environment variable: ${envVar}`);
+    console.error('Please create a .env.test file based on .env.test.example');
+    process.exit(1);
+  }
+}
+
 // Test users with email/password for easy testing
 const TEST_USERS = {
   admin: {
-    email: 'admin@cryptx.lk',
-    password: 'Admin123!',
+    email: process.env.TEST_ADMIN_EMAIL!,
+    password: process.env.TEST_ADMIN_PASSWORD!,
     displayName: 'Admin User',
     role: 'superadmin' as const,
   },
   evaluator1: {
-    email: 'judge1@cryptx.lk',
-    password: 'Judge123!',
+    email: process.env.TEST_EVALUATOR_EMAIL!,
+    password: process.env.TEST_EVALUATOR_PASSWORD!,
     displayName: 'Judge One',
     role: 'evaluator' as const,
   },
   evaluator2: {
-    email: 'judge2@cryptx.lk',
-    password: 'Judge123!',
+    email: process.env.TEST_EVALUATOR2_EMAIL!,
+    password: process.env.TEST_EVALUATOR_PASSWORD!,
     displayName: 'Judge Two',
     role: 'evaluator' as const,
   },
   evaluator3: {
-    email: 'judge3@cryptx.lk',
-    password: 'Judge123!',
+    email: process.env.TEST_EVALUATOR3_EMAIL!,
+    password: process.env.TEST_EVALUATOR_PASSWORD!,
     displayName: 'Judge Three',
     role: 'evaluator' as const,
   },
@@ -356,13 +374,13 @@ async function main() {
     console.log('Test Credentials:');
     console.log('=====================================');
     console.log('Admin:');
-    console.log('  Email: admin@cryptx.lk');
-    console.log('  Password: Admin123!');
+    console.log(`  Email: ${process.env.TEST_ADMIN_EMAIL}`);
+    console.log('  Password: [from environment]');
     console.log('  URL: http://localhost:3000/admin');
     console.log('');
     console.log('Evaluators:');
-    console.log('  Email: judge1@cryptx.lk, judge2@cryptx.lk, judge3@cryptx.lk');
-    console.log('  Password: Judge123!');
+    console.log(`  Email: ${process.env.TEST_EVALUATOR_EMAIL}, ${process.env.TEST_EVALUATOR2_EMAIL}, ${process.env.TEST_EVALUATOR3_EMAIL}`);
+    console.log('  Password: [from environment]');
     console.log('  URL: http://localhost:3000/judge/dashboard');
     console.log('=====================================\n');
     console.log('Competition: CryptX 2.0 Hackathon');

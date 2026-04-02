@@ -7,11 +7,15 @@ import { test, expect } from '@playwright/test';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
-// Test credentials (created by mvp-seed.ts)
-const ADMIN_EMAIL = 'admin@cryptx.lk';
-const ADMIN_PASSWORD = 'Admin123!';
-const JUDGE_EMAIL = 'judge1@cryptx.lk';
-const JUDGE_PASSWORD = 'Judge123!';
+// Test credentials (created by mvp-seed.ts) - read from environment
+const ADMIN_EMAIL = process.env.TEST_ADMIN_EMAIL || 'admin@cryptx.lk';
+const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD || '';
+const JUDGE_EMAIL = process.env.TEST_EVALUATOR_EMAIL || 'judge1@cryptx.lk';
+const JUDGE_PASSWORD = process.env.TEST_EVALUATOR_PASSWORD || '';
+
+if (!ADMIN_PASSWORD || !JUDGE_PASSWORD) {
+  throw new Error('Missing TEST_ADMIN_PASSWORD or TEST_EVALUATOR_PASSWORD environment variables. Create .env.test file based on .env.test.example');
+}
 
 test.describe('CryptX MVP End-to-End Flow', () => {
   test.beforeEach(async ({ page }) => {
@@ -126,7 +130,7 @@ test.describe('CryptX MVP End-to-End Flow', () => {
     
     // Evaluator: Login
     await evaluatorPage.goto(`${BASE_URL}/login`);
-    await evaluatorPage.fill('input[type="email"]', 'judge2@cryptx.lk');
+    await evaluatorPage.fill('input[type="email"]', process.env.TEST_EVALUATOR2_EMAIL || 'judge2@cryptx.lk');
     await evaluatorPage.fill('input[type="password"]', JUDGE_PASSWORD);
     await evaluatorPage.click('button[type="submit"]');
     await evaluatorPage.waitForURL(/\/judge\/dashboard/);

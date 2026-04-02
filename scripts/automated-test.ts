@@ -10,11 +10,26 @@ import { Timestamp } from 'firebase-admin/firestore';
 const ORG_ID = 'test-org';
 const COMP_ID = 'test-comp-' + Date.now();
 
+// Validate environment variables
+const requiredEnvVars = [
+  'TEST_ORG_ADMIN_EMAIL',
+  'TEST_ORG_ADMIN_PASSWORD',
+  'TEST_ORG_EVALUATOR_PASSWORD',
+];
+
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    console.error(`❌ Missing required environment variable: ${envVar}`);
+    console.error('Please create a .env.test file based on .env.test.example');
+    process.exit(1);
+  }
+}
+
 // Test data
-const ADMIN_EMAIL = 'test-admin@test.com';
-const ADMIN_PASSWORD = 'Test123!';
+const ADMIN_EMAIL = process.env.TEST_ORG_ADMIN_EMAIL!;
+const ADMIN_PASSWORD = process.env.TEST_ORG_ADMIN_PASSWORD!;
 const EVALUATOR_EMAILS = ['eval1@test.com', 'eval2@test.com', 'eval3@test.com'];
-const EVALUATOR_PASSWORD = 'Test123!';
+const EVALUATOR_PASSWORD = process.env.TEST_ORG_EVALUATOR_PASSWORD!;
 
 const CRITERIA = [
   { id: 'c1', name: 'Innovation', weight: 25, maxScore: 10, order: 1 },
@@ -370,8 +385,8 @@ async function main() {
     console.log('\n✨ All tests passed!\n');
     console.log('Test Credentials:');
     console.log('=====================================');
-    console.log(`Admin: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
-    console.log(`Evaluators: eval1@test.com, eval2@test.com, eval3@test.com / ${EVALUATOR_PASSWORD}`);
+    console.log(`Admin: ${ADMIN_EMAIL} / [from environment]`);
+    console.log(`Evaluators: eval1@test.com, eval2@test.com, eval3@test.com / [from environment]`);
     console.log(`Competition ID: ${COMP_ID}`);
     console.log('=====================================\n');
     console.log('You can now login and verify the results in the UI!');
