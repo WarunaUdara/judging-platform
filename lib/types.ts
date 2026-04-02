@@ -177,6 +177,7 @@ export interface CreateInvitationResponse {
   inviteUrl: string;
   token: string;
   expiresAt: string;
+  emailSent?: boolean;
 }
 
 export interface AcceptInvitationRequest {

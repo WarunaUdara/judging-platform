@@ -4,10 +4,6 @@ import { AcceptInvitationRequest, AcceptInvitationResponse } from '@/lib/types';
 import { badRequestResponse } from '@/lib/utils/auth';
 import { Timestamp } from 'firebase-admin/firestore';
 
-/**
- * POST /api/invite/accept
- * Accept an invitation and set custom claims
- */
 export async function POST(request: NextRequest) {
   try {
     const body: AcceptInvitationRequest = await request.json();
@@ -17,51 +13,74 @@ export async function POST(request: NextRequest) {
       return badRequestResponse('Missing required fields');
     }
 
-    // Verify the ID token to get the user
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
     const email = decodedToken.email;
+
+    console.log('Accept invite for:', email, 'uid:', uid);
 
     if (!email) {
       return badRequestResponse('User email not found');
     }
 
-    // Get the invitation
     const inviteDoc = await adminDb.collection('invitations').doc(token).get();
 
     if (!inviteDoc.exists) {
+      console.log('Invalid invitation token:', token);
       return NextResponse.json({ error: 'Invalid invitation token' }, { status: 404 });
     }
 
     const invite = inviteDoc.data()!;
+    console.log('Invite found:', invite.email, 'role:', invite.role);
 
-    // Check if invitation is expired
     if (invite.expiresAt.toMillis() < Date.now()) {
+      console.log('Invitation expired');
       return NextResponse.json({ error: 'Invitation has expired' }, { status: 400 });
     }
 
-    // Check if invitation is already used
     if (invite.used) {
+      console.log('Invitation already used');
       return NextResponse.json({ error: 'Invitation has already been used' }, { status: 400 });
     }
 
-    // Check if email matches
     if (invite.email.toLowerCase() !== email.toLowerCase()) {
+      console.log('Email mismatch:', invite.email, 'vs', email);
       return NextResponse.json(
         { error: 'This invitation was sent to a different email address' },
         { status: 403 }
       );
     }
 
-    // Get existing claims
+    // Also update Firestore user document
+    const userRef = adminDb.collection('users').doc(uid);
+    const userDoc = await userRef.get();
+    
+    if (userDoc.exists) {
+      await userRef.update({
+        role: invite.role,
+        competitionIds: [invite.competitionId],
+        lastLoginAt: new Date().toISOString(),
+      });
+      console.log('Updated existing user role to:', invite.role);
+    } else {
+      await userRef.set({
+        uid,
+        email,
+        displayName: decodedToken.name || email,
+        photoURL: decodedToken.picture || null,
+        role: invite.role,
+        competitionIds: [invite.competitionId],
+        createdAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+      });
+      console.log('Created new user with role:', invite.role);
+    }
+
     const user = await adminAuth.getUser(uid);
     const existingClaims = user.customClaims || {};
-
-    // Merge competition IDs
     const existingCompetitionIds = (existingClaims.competitionIds as string[]) || [];
     const newCompetitionIds = [...new Set([...existingCompetitionIds, invite.competitionId])];
 
-    // Set custom claims
     const newClaims = {
       role: invite.role,
       orgId: invite.orgId,
@@ -69,8 +88,8 @@ export async function POST(request: NextRequest) {
     };
 
     await adminAuth.setCustomUserClaims(uid, newClaims);
+    console.log('Set custom claims:', newClaims);
 
-    // Update evaluator record if role is evaluator
     if (invite.role === 'evaluator') {
       const evaluatorRef = adminDb
         .collection('competitions')
@@ -86,26 +105,16 @@ export async function POST(request: NextRequest) {
           displayName: decodedToken.name || email,
           isActive: true,
         });
+        console.log('Updated evaluator record');
       }
     }
 
-    // Mark invitation as used
     await inviteDoc.ref.update({
       used: true,
       usedAt: Timestamp.now(),
     });
 
-    // Write audit log
-    await adminDb.collection('audit_logs').add({
-      actorUid: uid,
-      actorEmail: email,
-      action: 'invite.accept',
-      resourceType: 'invitation',
-      resourceId: token,
-      competitionId: invite.competitionId,
-      meta: { role: invite.role },
-      timestamp: Timestamp.now(),
-    });
+    console.log('Returning role:', invite.role);
 
     const response: AcceptInvitationResponse = {
       success: true,

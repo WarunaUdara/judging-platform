@@ -1,0 +1,72 @@
+{
+  "email": {
+    "from": "CrpytX 2.0 <noreply@pruthivithejan.me>",
+    "subject": "Congratulations! You've been selected for CryptX 2.0"
+  },
+  "images": {
+    "header": "https://res.cloudinary.com/dhy3ldqeg/image/upload/v1766736860/email_header_qgtot1.png",
+    "logo": "https://res.cloudinary.com/dhy3ldqeg/image/upload/v1766737166/logo_avaxrj.png"
+  },
+  "sender": {
+    "name": "Pruthivi Thejan",
+    "position": "General Vice President"
+  },
+  "meeting": {
+    "date": "Friday, December 26",
+    "time": "8:00pm",
+    "platform": "Google Meet",
+    "link": "https://meet.google.com/jgm-sszg-wfs"
+  },
+  "recipients": [
+    {
+      "email": "ahinsawikramarathna@gmail.com",
+      "name": "Ahinsa Wikramarathna",
+      "role": "Co-Chair"
+    },
+    {
+      "email": "hasithapriyadarshana24@gmail.com",
+      "name": "Hasitha Priyadarshana",
+      "role": "Co-Chair"
+    },
+    {
+      "email": "netharavidmantha54@gmail.com",
+      "name": "Rathnayake Palliyage Nethara Vidmantha",
+      "role": "Co-Chair"
+    },
+    {
+      "email": "dananjayakonara396@gmail.com",
+      "name": "Nuwan Konara",
+      "role": "CTF Coordinator"
+    },
+    {
+      "email": "dulangaisiri54@gmail.com",
+      "name": "Dulanga Isiri Perera",
+      "role": "Designathon Coordinator"
+    },
+    {
+      "email": "hansana.etec1216@gmail.com",
+      "name": "J.Yesith Sri Hansana",
+      "role": "Hackathon Coordinator"
+    },
+    {
+      "email": "sadeepal319@gmail.com",
+      "name": "Sadeepa Lakshan Bandaranayaka",
+      "role": "Finance Crew Head"
+    },
+    {
+      "email": "lakshanrok936@gmail.com",
+      "name": "Tharindu Lakshan",
+      "role": "Media Crew Head"
+    },
+    {
+      "email": "didulanadeeja43@gmail.com",
+      "name": "Didula Nadeeja",
+      "role": "Marketing Crew Head"
+    },
+    {
+      "email": "hirushannissanka22@gmail.com",
+      "name": "Hansaka Hirushan",
+      "role": "Logistics Crew Head"
+    }
+  ]
+}

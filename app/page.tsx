@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Layers, Scale, Zap, Code2, Database, Cloud, FileCode } from 'lucide-react';
 
@@ -8,7 +9,14 @@ export default function HomePage() {
       {/* Header */}
       <header className="border-b border-[#333333] sticky top-0 z-50 bg-black/95 backdrop-blur-sm">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <Image 
+              src="/logo.webp" 
+              alt="CryptX Logo" 
+              width={40} 
+              height={40}
+              className="object-contain"
+            />
             <span className="text-xl font-semibold tracking-tight">CryptX</span>
             <span className="text-[#333333]">/</span>
             <span className="text-[#888888]">Judging</span>

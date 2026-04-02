@@ -1,13 +1,15 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Trophy, Users, UserCheck, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
-import type { Competition } from '@/lib/types';
+import { useEffect, useState } from "react";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Trophy, Users, UserCheck, ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth-provider";
+import type { Competition } from "@/lib/types";
 
 interface DashboardStats {
   competitions: number;
@@ -17,39 +19,49 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
+  const router = useRouter();
+  const { role } = useAuth();
+
   const [stats, setStats] = useState<DashboardStats>({
     competitions: 0,
     activeCompetitions: 0,
     teams: 0,
     evaluators: 0,
   });
-  const [recentCompetitions, setRecentCompetitions] = useState<Competition[]>([]);
+  const [recentCompetitions, setRecentCompetitions] = useState<Competition[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (role === "organizer") {
+      router.push("/admin/pending");
+      return;
+    }
+
     const fetchStats = async () => {
       try {
         // Fetch competitions
-        const competitionsSnap = await getDocs(collection(db, 'competitions'));
+        const competitionsSnap = await getDocs(collection(db, "competitions"));
         const competitions = competitionsSnap.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         })) as Competition[];
 
-        const activeComps = competitions.filter((c) => c.status === 'active');
+        const activeComps = competitions.filter((c) => c.status === "active");
 
         // Fetch teams count
         let teamsCount = 0;
         for (const comp of competitions) {
           const teamsSnap = await getDocs(
-            collection(db, `competitions/${comp.id}/teams`)
+            collection(db, `competitions/${comp.id}/teams`),
           );
           teamsCount += teamsSnap.size;
         }
 
         // Fetch evaluators count
         const evaluatorsSnap = await getDocs(
-          query(collection(db, 'users'), where('role', '==', 'evaluator'))
+          query(collection(db, "users"), where("role", "==", "evaluator")),
         );
 
         setStats({
@@ -67,14 +79,14 @@ export default function AdminDashboard() {
         });
         setRecentCompetitions(sorted.slice(0, 3));
       } catch (error) {
-        console.error('Error fetching stats:', error);
+        console.error("Error fetching stats:", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchStats();
-  }, []);
+  }, [role, router]);
 
   if (loading) {
     return (
@@ -184,11 +196,11 @@ export default function AdminDashboard() {
                     </div>
                     <span
                       className={`text-xs px-2 py-1 border ${
-                        comp.status === 'active'
-                          ? 'border-white text-white'
-                          : comp.status === 'closed'
-                          ? 'border-[#888888] text-[#888888]'
-                          : 'border-[#333333] text-[#888888]'
+                        comp.status === "active"
+                          ? "border-white text-white"
+                          : comp.status === "closed"
+                            ? "border-[#888888] text-[#888888]"
+                            : "border-[#333333] text-[#888888]"
                       }`}
                     >
                       {comp.status}

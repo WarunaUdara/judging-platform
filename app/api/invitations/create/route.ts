@@ -78,10 +78,41 @@ export async function POST(request: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const inviteUrl = `${appUrl}/invite/${token}`;
 
+    // Try to send email notification
+    let emailSent = false;
+    try {
+      const competitionDoc = await adminDb.collection('competitions').doc(competitionId).get();
+      const competitionData = competitionDoc.data();
+      
+      const emailResponse = await fetch(`${appUrl}/api/email/send-invite`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: email,
+          evaluatorName: email.split('@')[0],
+          competitionName: competitionData?.name || 'Competition',
+          competitionType: competitionData?.type || 'hackathon',
+          inviteLink: inviteUrl,
+          organizerName: authContext.email || 'CryptX Team',
+        }),
+      });
+
+      if (emailResponse.ok) {
+        emailSent = true;
+      } else {
+        console.error('Email send failed:', await emailResponse.text());
+      }
+    } catch (emailError) {
+      console.error('Email send error:', emailError);
+    }
+
     const response: CreateInvitationResponse = {
       inviteUrl,
       token,
       expiresAt: expiresAt.toDate().toISOString(),
+      emailSent,
     };
 
     return NextResponse.json(response);

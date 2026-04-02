@@ -1,0 +1,22 @@
+{
+  "email": {
+    "from": "CrpytX 2.0 <noreply@pruthivithejan.me>",
+    "subject": "Congratulations! You've been selected for CryptX 2.0"
+  },
+  "images": {
+    "header": "https://res.cloudinary.com/dhy3ldqeg/image/upload/v1766736860/email_header_qgtot1.png",
+    "logo": "https://res.cloudinary.com/dhy3ldqeg/image/upload/v1766737166/logo_avaxrj.png"
+  },
+  "sender": {
+    "name": "Pruthivi Thejan",
+    "position": "General Vice President"
+  },
+  "contactEmail": "cryptx.icts.usj@gmail.com",
+  "recipients": [
+    {
+      "email": "lehanmadu@gmail.com",
+      "name": "Lehan Madushanka",
+      "role": "Designathon Crew Member"
+    }
+  ]
+}
