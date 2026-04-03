@@ -31,7 +31,8 @@ function mapSize(fontSize: number): "sm" | "md" | "lg" | "xl" {
 
 export default function TimerDisplay({ config, mediaURL, onBack }: TimerDisplayProps) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const hideTimerRef = useRef<number | null>(null);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasAutoStartedRef = useRef(false);
 
   const { isFullscreen, enter, exit } = useFullscreen(rootRef);
   const { remaining, running, finished, start, pause, reset, showDays } = useTimer(config.targetSeconds);
@@ -40,13 +41,11 @@ export default function TimerDisplay({ config, mediaURL, onBack }: TimerDisplayP
   const [controlsVisible, setControlsVisible] = useState(true);
 
   useEffect(() => {
-    const kickOff = async () => {
-      await enter();
+    if (!hasAutoStartedRef.current) {
+      hasAutoStartedRef.current = true;
       start();
-    };
-
-    void kickOff();
-  }, [enter, start]);
+    }
+  }, [start]);
 
   useEffect(() => {
     if (finished) {
@@ -55,28 +54,30 @@ export default function TimerDisplay({ config, mediaURL, onBack }: TimerDisplayP
   }, [alarm, config.alarmConfig, finished]);
 
   useEffect(() => {
+    const browser = globalThis as Window & typeof globalThis;
+
     const showAndReset = () => {
       setControlsVisible(true);
 
       if (hideTimerRef.current) {
-        window.clearTimeout(hideTimerRef.current);
+        browser.clearTimeout(hideTimerRef.current);
       }
 
-      hideTimerRef.current = window.setTimeout(() => {
+      hideTimerRef.current = browser.setTimeout(() => {
         setControlsVisible(false);
       }, 3000);
     };
 
     showAndReset();
-    window.addEventListener("mousemove", showAndReset);
-    window.addEventListener("touchstart", showAndReset, { passive: true });
+    browser.addEventListener("mousemove", showAndReset);
+    browser.addEventListener("touchstart", showAndReset, { passive: true });
 
     return () => {
       if (hideTimerRef.current) {
-        window.clearTimeout(hideTimerRef.current);
+        browser.clearTimeout(hideTimerRef.current);
       }
-      window.removeEventListener("mousemove", showAndReset);
-      window.removeEventListener("touchstart", showAndReset);
+      browser.removeEventListener("mousemove", showAndReset);
+      browser.removeEventListener("touchstart", showAndReset);
     };
   }, []);
 
@@ -178,7 +179,16 @@ export default function TimerDisplay({ config, mediaURL, onBack }: TimerDisplayP
           controlsVisible ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
-        <Button variant="secondary" onClick={() => (running ? pause() : start())}>
+        <Button
+          variant="secondary"
+          onClick={() => {
+            if (running) {
+              pause();
+            } else {
+              start();
+            }
+          }}
+        >
           {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           {running ? "Pause" : "Resume"}
         </Button>
@@ -188,7 +198,16 @@ export default function TimerDisplay({ config, mediaURL, onBack }: TimerDisplayP
           Reset
         </Button>
 
-        <Button variant="outline" onClick={() => void (isFullscreen ? exit() : enter())}>
+        <Button
+          variant="outline"
+          onClick={async () => {
+            if (isFullscreen) {
+              await exit();
+            } else {
+              await enter();
+            }
+          }}
+        >
           {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
           {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
         </Button>
