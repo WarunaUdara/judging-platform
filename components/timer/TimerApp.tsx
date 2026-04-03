@@ -212,6 +212,7 @@ export default function TimerApp() {
             variant="default"
             showDays="auto"
             className={config.showBrackets ? "" : "[&_span[class*='absolute']]:hidden"}
+            style={{ fontFamily: config.fontFamily }}
           />
 
           {isTimeUp && (

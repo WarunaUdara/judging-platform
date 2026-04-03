@@ -280,7 +280,7 @@ export function FlipClock({
       aria-live="polite"
       className={cn(
         flipClockVariants({ size: resolvedSize, variant }),
-        "flex flex-row flex-wrap justify-center gap-6 sm:gap-5 md:flex-nowrap md:gap-6 font-['Hacked_KerX']",
+        "flex flex-row flex-wrap justify-center gap-6 sm:gap-5 md:flex-nowrap md:gap-6",
         className
       )}
       style={style}
