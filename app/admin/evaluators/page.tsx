@@ -28,6 +28,15 @@ export default function EvaluatorsPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [evaluatorToDelete, setEvaluatorToDelete] = useState<Evaluator | null>(null);
 
+  // Credentials display dialog
+  const [showCredentialsDialog, setShowCredentialsDialog] = useState(false);
+  const [createdCredentials, setCreatedCredentials] = useState<{
+    email: string;
+    password: string;
+    emailSent: boolean;
+    emailError?: string;
+  } | null>(null);
+
   useEffect(() => {
     const fetchCompetitions = async () => {
       try {
@@ -118,14 +127,23 @@ export default function EvaluatorsPage() {
         throw new Error(result.error || 'Failed to create evaluator');
       }
 
+      // Show credentials dialog
+      setCreatedCredentials({
+        email: createEmail,
+        password: createPassword,
+        emailSent: result.emailSent,
+        emailError: result.emailError,
+      });
+      setShowCredentialsDialog(true);
+
       if (result.emailSent) {
         toast.success(`Evaluator created and credentials sent to ${createEmail}`);
       } else {
         const errorMsg = result.emailError 
-          ? `Email failed: ${result.emailError}` 
-          : 'Email not sent - share credentials manually';
-        toast.error(`Evaluator created but ${errorMsg}`);
-        console.log('Email error details:', result.emailError);
+          ? `${result.emailError}` 
+          : 'Unknown error';
+        toast.error(`Evaluator created but email failed: ${errorMsg}`);
+        console.error('Email error details:', result.emailError);
       }
 
       // Refresh evaluators list
@@ -408,6 +426,72 @@ export default function EvaluatorsPage() {
         setEvaluatorToDelete(null);
       }}
       isDestructive
+    />
+
+    <ConfirmDialog
+      isOpen={showCredentialsDialog}
+      title={createdCredentials?.emailSent ? 'Evaluator Created & Email Sent' : 'Evaluator Created - Email Failed'}
+      description={
+        <div className="space-y-4">
+          {createdCredentials?.emailSent ? (
+            <div className="p-3 bg-green-950/30 border border-green-800 text-green-300 text-sm">
+              ✅ Credentials email sent successfully to <span className="font-mono">{createdCredentials.email}</span>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="p-3 bg-red-950/30 border border-red-800 text-red-300 text-sm">
+                ❌ Email sending failed. Please share these credentials manually:
+              </div>
+              {createdCredentials?.emailError && (
+                <div className="p-3 bg-[#111111] border border-[#333333] text-sm">
+                  <div className="text-[#888888] mb-1">Error Details:</div>
+                  <div className="text-red-400 font-mono text-xs break-all">{createdCredentials.emailError}</div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <div className="p-4 bg-[#111111] border border-[#333333] space-y-3">
+            <div className="text-sm text-[#888888]">Login Credentials</div>
+            <div className="space-y-2">
+              <div>
+                <div className="text-xs text-[#888888] mb-1">Email</div>
+                <div className="font-mono text-sm bg-black p-2 border border-[#333333]">{createdCredentials?.email}</div>
+              </div>
+              <div>
+                <div className="text-xs text-[#888888] mb-1">Password</div>
+                <div className="font-mono text-sm bg-black p-2 border border-[#333333]">{createdCredentials?.password}</div>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                if (createdCredentials) {
+                  navigator.clipboard.writeText(`Email: ${createdCredentials.email}\nPassword: ${createdCredentials.password}`);
+                  toast.success('Credentials copied to clipboard');
+                }
+              }}
+              className="text-xs text-[#888888] hover:text-white transition-colors"
+            >
+              📋 Copy credentials to clipboard
+            </button>
+          </div>
+
+          {!createdCredentials?.emailSent && (
+            <div className="p-3 bg-yellow-950/20 border border-yellow-800/50 text-yellow-200 text-xs">
+              💡 Check Resend dashboard at https://resend.com/emails to see delivery logs
+            </div>
+          )}
+        </div>
+      }
+      confirmText="Done"
+      onConfirm={() => {
+        setShowCredentialsDialog(false);
+        setCreatedCredentials(null);
+      }}
+      onCancel={() => {
+        setShowCredentialsDialog(false);
+        setCreatedCredentials(null);
+      }}
     />
     </>
   );
