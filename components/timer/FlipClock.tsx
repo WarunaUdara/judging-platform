@@ -51,62 +51,55 @@ const FlipUnit = memo(function FlipUnit({
   variant,
   className,
 }: FlipUnitProps) {
-  const [currentDigit, setCurrentDigit] = useState(digit);
-  const [nextDigit, setNextDigit] = useState(digit);
-  const [isFlipping, setIsFlipping] = useState(false);
+  const [prevDigit, setPrevDigit] = useState(digit);
+  const [flipping, setFlipping] = useState(false);
   const showCorners = variant === "default" || variant === "outline";
 
   useEffect(() => {
-    if (digit !== currentDigit) {
-      setNextDigit(digit);
-      setIsFlipping(true);
-      
-      // Update current digit after animation completes (600ms)
+    if (digit !== prevDigit) {
+      setFlipping(true);
       const timer = setTimeout(() => {
-        setCurrentDigit(digit);
-        setIsFlipping(false);
-      }, 600);
-      
+        setFlipping(false);
+        setPrevDigit(digit);
+      }, 550);
       return () => clearTimeout(timer);
     }
-  }, [digit, currentDigit]);
+  }, [digit, prevDigit]);
 
   return (
     <div className={cn(flipUnitVariants({ size, variant }), className)}>
-      {/* Static top half - shows current digit always */}
+      {/* Static top half - current digit */}
       <div className={cn(commonCardStyle, "top-0 rounded-t-md")}>
-        <DigitSpan position="top">{isFlipping ? currentDigit : digit}</DigitSpan>
+        <DigitSpan position="top">{digit}</DigitSpan>
       </div>
-
-      {/* Static bottom half - shows next digit when flipping, otherwise current */}
+      
+      {/* Static bottom half - previous digit */}
       <div className={cn(commonCardStyle, "translate-y-full rounded-b-md")}>
-        <DigitSpan position="bottom">{isFlipping ? nextDigit : digit}</DigitSpan>
+        <DigitSpan position="bottom">{prevDigit}</DigitSpan>
       </div>
-
-      {/* Animated top flip - flips down from current to next */}
-      {isFlipping && (
-        <div
-          className={cn(
-            commonCardStyle,
-            "backface-hidden z-20 origin-bottom rounded-t-md animate-flip-top"
-          )}
-        >
-          <DigitSpan position="top">{currentDigit}</DigitSpan>
-        </div>
-      )}
-
-      {/* Animated bottom flip - reveals next digit from behind */}
-      {isFlipping && (
-        <div
-          className={cn(
-            commonCardStyle,
-            "backface-hidden z-10 origin-top translate-y-full rounded-b-md animate-flip-bottom"
-          )}
-          style={{ transform: "translateY(100%) rotateX(90deg)" }}
-        >
-          <DigitSpan position="bottom">{nextDigit}</DigitSpan>
-        </div>
-      )}
+      
+      {/* Animated top flip - previous digit */}
+      <div
+        className={cn(
+          commonCardStyle,
+          "backface-hidden z-20 origin-bottom rounded-t-md",
+          flipping && "animate-flip-top"
+        )}
+      >
+        <DigitSpan position="top">{prevDigit}</DigitSpan>
+      </div>
+      
+      {/* Animated bottom flip - current digit */}
+      <div
+        className={cn(
+          commonCardStyle,
+          "backface-hidden z-10 origin-top translate-y-full rounded-b-md",
+          flipping && "animate-flip-bottom"
+        )}
+        style={{ transform: "rotateX(90deg)" }}
+      >
+        <DigitSpan position="bottom">{digit}</DigitSpan>
+      </div>
 
       {/* Center divider line */}
       <div className="absolute top-1/2 left-0 z-30 h-px w-full -translate-y-1/2 bg-[var(--timer-border)]" />
