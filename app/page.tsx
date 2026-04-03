@@ -29,8 +29,20 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <main className="flex-1">
-        <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32 lg:py-40">
+        <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 lg:py-28">
           <div className="max-w-4xl mx-auto text-center space-y-8">
+            {/* Hero Logo */}
+            <div className="flex justify-center mb-4">
+              <Image 
+                src="/logo.webp" 
+                alt="CryptX Logo" 
+                width={140} 
+                height={140}
+                className="object-contain"
+                priority
+              />
+            </div>
+            
             <p className="text-sm text-[#a1a1aa] uppercase tracking-[0.2em] font-medium">
               Hackathon Judging Platform
             </p>
@@ -163,17 +175,22 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="border-t border-[#333333] py-8 bg-black">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-[#71717a] text-sm">
-          <p>
-            Built for{' '}
-            <a 
-              href="https://cryptx.lk" 
-              className="text-white hover:text-[#c0c0c0] transition-colors"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              CryptX
-            </a>
-          </p>
+          <div className="flex flex-col items-center gap-2">
+            <p>
+              Hosted by ICTS - University of Sri Jayewardenepura
+            </p>
+            <p>
+              Built for{' '}
+              <a 
+                href="https://cryptx.lk" 
+                className="text-white hover:text-[#c0c0c0] transition-colors"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                CryptX
+              </a>
+            </p>
+          </div>
         </div>
       </footer>
     </div>

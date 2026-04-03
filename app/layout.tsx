@@ -12,6 +12,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "CryptX Judging Platform",
   description: "Multi-competition hackathon judging and evaluation platform",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
