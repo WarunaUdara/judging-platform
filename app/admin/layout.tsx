@@ -15,6 +15,7 @@ import {
   LogOut,
   Menu,
   X,
+  Timer,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Image from "next/image";
@@ -50,6 +51,13 @@ const navigation = [
     href: "/admin/pending",
     icon: UserPlus,
     roles: ["superadmin", "organizer"],
+  },
+  {
+    name: "Event Timer",
+    href: "/timer",
+    icon: Timer,
+    roles: ["superadmin"],
+    external: true,
   },
 ];
 
@@ -139,10 +147,13 @@ export default function AdminLayout({
             .filter((item) => role && item.roles.includes(role))
             .map((item) => {
               const isActive = pathname === item.href;
+              const isExternal = "external" in item && item.external;
               return (
                 <Link
                   key={item.name}
                   href={item.href}
+                  target={isExternal ? "_blank" : undefined}
+                  rel={isExternal ? "noopener noreferrer" : undefined}
                   className={`flex items-center gap-3 px-3 py-2 text-sm transition-colors ${
                     isActive
                       ? "bg-white text-black"
@@ -152,6 +163,9 @@ export default function AdminLayout({
                 >
                   <item.icon className="w-4 h-4" />
                   {item.name}
+                  {isExternal && (
+                    <span className="ml-auto text-xs text-[#666666]">&#8599;</span>
+                  )}
                 </Link>
               );
             })}
