@@ -8,8 +8,10 @@ export interface TimerConfig {
   size: "sm" | "md" | "lg" | "xl";
   primaryColor: string;
   backgroundColor: string;
+  cardColor: string;
   borderColor: string;
   mutedColor: string;
+  foregroundColor: string;
   showBrackets: boolean;
   fontFamily: "Hacked KerX" | "Uncut Sans";
 }
@@ -18,9 +20,11 @@ export const DEFAULT_CONFIG: TimerConfig = {
   durationSeconds: 2 * 60 * 60, // 2 hours
   size: "xl",
   primaryColor: "oklch(0.6522 0.2135 37.99)", // Orange
-  backgroundColor: "oklch(0.1805 0.0155 101.8)", // Dark gray-green
+  backgroundColor: "oklch(0.1805 0.0155 101.8)", // Dark gray-green  
+  cardColor: "oklch(0.2351 0.0115 91.75)", // Card background
   borderColor: "oklch(0.2755 0.0126 100.48)", // Gray border
   mutedColor: "oklch(0.709 0.01 56.259)", // Muted gray
+  foregroundColor: "oklch(0.9439 0.0011 17.18)", // Near-white text
   showBrackets: true,
   fontFamily: "Hacked KerX",
 };
@@ -201,12 +205,12 @@ export default function TimerConfigScreen({ config, onSave, onClose }: TimerConf
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-['Uncut_Sans'] text-[--timer-muted-foreground] uppercase tracking-wider mb-2">
-                    Background Color
+                    Card Background
                   </label>
                   <input
                     type="text"
-                    value={localConfig.backgroundColor}
-                    onChange={(e) => setLocalConfig({ ...localConfig, backgroundColor: e.target.value })}
+                    value={localConfig.cardColor}
+                    onChange={(e) => setLocalConfig({ ...localConfig, cardColor: e.target.value })}
                     className="w-full bg-[--timer-card] border border-[--timer-border] px-4 py-2 text-sm text-[--timer-foreground] font-mono focus:outline-none focus:border-[--timer-primary]"
                   />
                 </div>
@@ -218,6 +222,31 @@ export default function TimerConfigScreen({ config, onSave, onClose }: TimerConf
                     type="text"
                     value={localConfig.borderColor}
                     onChange={(e) => setLocalConfig({ ...localConfig, borderColor: e.target.value })}
+                    className="w-full bg-[--timer-card] border border-[--timer-border] px-4 py-2 text-sm text-[--timer-foreground] font-mono focus:outline-none focus:border-[--timer-primary]"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-['Uncut_Sans'] text-[--timer-muted-foreground] uppercase tracking-wider mb-2">
+                    Digit Background
+                  </label>
+                  <input
+                    type="text"
+                    value={localConfig.backgroundColor}
+                    onChange={(e) => setLocalConfig({ ...localConfig, backgroundColor: e.target.value })}
+                    className="w-full bg-[--timer-card] border border-[--timer-border] px-4 py-2 text-sm text-[--timer-foreground] font-mono focus:outline-none focus:border-[--timer-primary]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-['Uncut_Sans'] text-[--timer-muted-foreground] uppercase tracking-wider mb-2">
+                    Text/Label Color
+                  </label>
+                  <input
+                    type="text"
+                    value={localConfig.foregroundColor}
+                    onChange={(e) => setLocalConfig({ ...localConfig, foregroundColor: e.target.value })}
                     className="w-full bg-[--timer-card] border border-[--timer-border] px-4 py-2 text-sm text-[--timer-foreground] font-mono focus:outline-none focus:border-[--timer-primary]"
                   />
                 </div>

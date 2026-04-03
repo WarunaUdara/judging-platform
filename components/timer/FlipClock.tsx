@@ -21,11 +21,11 @@ const flipUnitVariants = cva(
         xl: "h-28 w-20 min-w-20 text-7xl sm:h-32 sm:w-22 sm:min-w-22 sm:text-8xl",
       },
       variant: {
-        default: "border-[--timer-border] bg-[--timer-background] text-[--timer-primary]",
-        secondary: "border-[--timer-border] bg-[--timer-card] text-[--timer-foreground]",
-        destructive: "border-[--timer-destructive] bg-[--timer-destructive]/10 text-[--timer-destructive]",
-        outline: "border-[--timer-border] bg-[--timer-background] text-[--timer-primary]",
-        muted: "border-[--timer-border] bg-[--timer-muted] text-[--timer-muted-foreground]",
+        default: "border-[var(--timer-border)] bg-[var(--timer-background)] text-[var(--timer-primary)]",
+        secondary: "border-[var(--timer-border)] bg-[var(--timer-card)] text-[var(--timer-foreground)]",
+        destructive: "border-[var(--timer-destructive)] bg-[var(--timer-destructive)]/10 text-[var(--timer-destructive)]",
+        outline: "border-[var(--timer-border)] bg-[var(--timer-background)] text-[var(--timer-primary)]",
+        muted: "border-[var(--timer-border)] bg-[var(--timer-muted)] text-[var(--timer-muted-foreground)]",
       },
     },
     defaultVariants: {
@@ -51,74 +51,81 @@ const FlipUnit = memo(function FlipUnit({
   variant,
   className,
 }: FlipUnitProps) {
-  const [prevDigit, setPrevDigit] = useState(digit);
-  const [flipping, setFlipping] = useState(false);
+  const [currentDigit, setCurrentDigit] = useState(digit);
+  const [nextDigit, setNextDigit] = useState(digit);
+  const [isFlipping, setIsFlipping] = useState(false);
   const showCorners = variant === "default" || variant === "outline";
 
   useEffect(() => {
-    if (digit !== prevDigit) {
-      setFlipping(true);
+    if (digit !== currentDigit) {
+      setNextDigit(digit);
+      setIsFlipping(true);
+      
+      // Update current digit after animation completes (600ms)
       const timer = setTimeout(() => {
-        setFlipping(false);
-        setPrevDigit(digit);
-      }, 550);
+        setCurrentDigit(digit);
+        setIsFlipping(false);
+      }, 600);
+      
       return () => clearTimeout(timer);
     }
-  }, [digit, prevDigit]);
+  }, [digit, currentDigit]);
 
   return (
     <div className={cn(flipUnitVariants({ size, variant }), className)}>
-      {/* Static top half - current digit */}
-      <div className={cn(commonCardStyle, "top-0 rounded-t-lg")}>
-        <DigitSpan position="top">{digit}</DigitSpan>
+      {/* Static top half - shows current digit always */}
+      <div className={cn(commonCardStyle, "top-0 rounded-t-md")}>
+        <DigitSpan position="top">{currentDigit}</DigitSpan>
       </div>
 
-      {/* Static bottom half - previous digit */}
-      <div className={cn(commonCardStyle, "translate-y-full rounded-b-lg")}>
-        <DigitSpan position="bottom">{prevDigit}</DigitSpan>
+      {/* Static bottom half - shows current digit */}
+      <div className={cn(commonCardStyle, "translate-y-full rounded-b-md")}>
+        <DigitSpan position="bottom">{currentDigit}</DigitSpan>
       </div>
 
-      {/* Animated top flip - previous digit */}
-      <div
-        className={cn(
-          commonCardStyle,
-          "backface-hidden z-20 origin-bottom rounded-t-lg",
-          flipping && "animate-flip-top"
-        )}
-      >
-        <DigitSpan position="top">{prevDigit}</DigitSpan>
-      </div>
+      {/* Animated top flip - flips down from current to next */}
+      {isFlipping && (
+        <div
+          className={cn(
+            commonCardStyle,
+            "backface-hidden z-20 origin-bottom rounded-t-md animate-flip-top"
+          )}
+        >
+          <DigitSpan position="top">{currentDigit}</DigitSpan>
+        </div>
+      )}
 
-      {/* Animated bottom flip - current digit */}
-      <div
-        className={cn(
-          commonCardStyle,
-          "backface-hidden z-10 origin-top translate-y-full rounded-b-lg",
-          flipping && "animate-flip-bottom"
-        )}
-        style={{ transform: "rotateX(90deg)" }}
-      >
-        <DigitSpan position="bottom">{digit}</DigitSpan>
-      </div>
+      {/* Animated bottom flip - reveals next digit from behind */}
+      {isFlipping && (
+        <div
+          className={cn(
+            commonCardStyle,
+            "backface-hidden z-10 origin-top translate-y-full rounded-b-md animate-flip-bottom"
+          )}
+          style={{ transform: "translateY(100%) rotateX(90deg)" }}
+        >
+          <DigitSpan position="bottom">{nextDigit}</DigitSpan>
+        </div>
+      )}
 
       {/* Center divider line */}
-      <div className="absolute top-1/2 left-0 z-30 h-px w-full -translate-y-1/2 bg-[--timer-border]" />
+      <div className="absolute top-1/2 left-0 z-30 h-px w-full -translate-y-1/2 bg-[var(--timer-border)]" />
 
       {/* Corner accent marks - 8 corners (L-shaped) */}
       {showCorners && (
         <>
           {/* Top-left corner */}
-          <span className="absolute top-0 left-0 z-40 h-[6px] w-px bg-[--timer-primary]" />
-          <span className="absolute top-0 left-0 z-40 h-px w-[6px] bg-[--timer-primary]" />
+          <span className="absolute top-0 left-0 z-40 h-[6px] w-px bg-[var(--timer-primary)]" />
+          <span className="absolute top-0 left-0 z-40 h-px w-[6px] bg-[var(--timer-primary)]" />
           {/* Top-right corner */}
-          <span className="absolute top-0 right-0 z-40 h-[6px] w-px bg-[--timer-primary]" />
-          <span className="absolute top-0 right-0 z-40 h-px w-[6px] bg-[--timer-primary]" />
+          <span className="absolute top-0 right-0 z-40 h-[6px] w-px bg-[var(--timer-primary)]" />
+          <span className="absolute top-0 right-0 z-40 h-px w-[6px] bg-[var(--timer-primary)]" />
           {/* Bottom-left corner */}
-          <span className="absolute bottom-0 left-0 z-40 h-[6px] w-px bg-[--timer-primary]" />
-          <span className="absolute bottom-0 left-0 z-40 h-px w-[6px] bg-[--timer-primary]" />
+          <span className="absolute bottom-0 left-0 z-40 h-[6px] w-px bg-[var(--timer-primary)]" />
+          <span className="absolute bottom-0 left-0 z-40 h-px w-[6px] bg-[var(--timer-primary)]" />
           {/* Bottom-right corner */}
-          <span className="absolute right-0 bottom-0 z-40 h-[6px] w-px bg-[--timer-primary]" />
-          <span className="absolute right-0 bottom-0 z-40 h-px w-[6px] bg-[--timer-primary]" />
+          <span className="absolute right-0 bottom-0 z-40 h-[6px] w-px bg-[var(--timer-primary)]" />
+          <span className="absolute right-0 bottom-0 z-40 h-px w-[6px] bg-[var(--timer-primary)]" />
         </>
       )}
     </div>
@@ -133,7 +140,7 @@ interface DigitSpanProps {
 function DigitSpan({ children, position }: DigitSpanProps) {
   return (
     <span
-      className="absolute right-0 left-0 flex h-[200%] w-full items-center justify-center"
+      className="absolute right-0 left-0 flex h-[200%] w-full items-center justify-center font-bold"
       style={{ top: position === "top" ? "0%" : "-100%" }}
     >
       {children}
@@ -142,7 +149,7 @@ function DigitSpan({ children, position }: DigitSpanProps) {
 }
 
 const flipClockVariants = cva(
-  "relative flex items-center justify-center font-['Hacked_KerX'] font-medium",
+  "relative flex items-center justify-center font-medium",
   {
     variants: {
       size: {
@@ -152,11 +159,11 @@ const flipClockVariants = cva(
         xl: "gap-2.5 sm:gap-3",
       },
       variant: {
-        default: "text-[--timer-primary]",
-        secondary: "text-[--timer-foreground]",
-        destructive: "text-[--timer-destructive]",
-        outline: "text-[--timer-primary]",
-        muted: "text-[--timer-muted-foreground]",
+        default: "text-[var(--timer-primary)]",
+        secondary: "text-[var(--timer-foreground)]",
+        destructive: "text-[var(--timer-destructive)]",
+        outline: "text-[var(--timer-primary)]",
+        muted: "text-[var(--timer-muted-foreground)]",
       },
     },
     defaultVariants: {
@@ -188,7 +195,7 @@ type FlipClockSize = NonNullable<
 
 function UnitLabel({ children }: { children: ReactNode }) {
   return (
-    <span className="font-['Uncut_Sans'] text-[10px] text-[--timer-muted-foreground] uppercase tracking-[0.2em]">
+    <span className="font-['Uncut_Sans'] text-[10px] text-[var(--timer-muted-foreground)] uppercase tracking-[0.2em]">
       {children}
     </span>
   );
@@ -223,6 +230,7 @@ export function FlipClock({
   variant,
   showDays = "auto",
   className,
+  style,
   ...props
 }: FlipClockProps) {
   const resolvedSize: FlipClockSize = size ?? "md";
@@ -272,9 +280,10 @@ export function FlipClock({
       aria-live="polite"
       className={cn(
         flipClockVariants({ size: resolvedSize, variant }),
-        "flex flex-row flex-wrap justify-center gap-6 sm:gap-5 md:flex-nowrap md:gap-6",
+        "flex flex-row flex-wrap justify-center gap-6 sm:gap-5 md:flex-nowrap md:gap-6 font-['Hacked_KerX']",
         className
       )}
+      style={style}
       {...props}
     >
       <span className="sr-only absolute">

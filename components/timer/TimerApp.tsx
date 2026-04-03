@@ -34,60 +34,72 @@ export default function TimerApp() {
   const saveConfig = useCallback((newConfig: TimerConfig) => {
     setConfig(newConfig);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newConfig));
-    // Reset timer to new duration
+    // Reset timer to new duration when config changes
     setRemaining(newConfig.durationSeconds);
     setRunning(false);
-    setTargetDate(null);
+    setPausedAt(null);
   }, []);
 
-  // Timer state
+  // Timer state - using pausedAt to track pause time properly
   const [remaining, setRemaining] = useState(config.durationSeconds);
   const [running, setRunning] = useState(false);
-  const [targetDate, setTargetDate] = useState<Date | null>(null);
+  const [pausedAt, setPausedAt] = useState<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
 
-  // Update remaining when config changes
+  // Update remaining when config changes (only if not running)
   useEffect(() => {
-    if (!running) {
+    if (!running && pausedAt === null) {
       setRemaining(config.durationSeconds);
     }
-  }, [config.durationSeconds, running]);
+  }, [config.durationSeconds, running, pausedAt]);
 
   // Start the timer
   const start = useCallback(() => {
-    const target = new Date(Date.now() + remaining * 1000);
-    setTargetDate(target);
+    if (pausedAt !== null) {
+      // Resume from pause - calculate new start time
+      startTimeRef.current = Date.now() - (config.durationSeconds - remaining) * 1000;
+    } else {
+      // Fresh start
+      startTimeRef.current = Date.now();
+    }
+    setPausedAt(null);
     setRunning(true);
-  }, [remaining]);
+  }, [remaining, pausedAt, config.durationSeconds]);
 
   // Pause the timer
   const pause = useCallback(() => {
     setRunning(false);
-    setTargetDate(null);
+    setPausedAt(Date.now());
   }, []);
 
   // Reset the timer
   const reset = useCallback(() => {
     setRunning(false);
-    setTargetDate(null);
+    setPausedAt(null);
+    startTimeRef.current = null;
     setRemaining(config.durationSeconds);
   }, [config.durationSeconds]);
 
-  // Countdown effect
+  // Countdown effect - ticks every 250ms
   useEffect(() => {
-    if (!running || !targetDate) return;
+    if (!running || startTimeRef.current === null) return;
 
     const tick = () => {
-      const diff = Math.max(0, Math.floor((targetDate.getTime() - Date.now()) / 1000));
-      setRemaining(diff);
-      if (diff === 0) {
+      const elapsed = Math.floor((Date.now() - startTimeRef.current!) / 1000);
+      const newRemaining = Math.max(0, config.durationSeconds - elapsed);
+      
+      setRemaining(newRemaining);
+      
+      if (newRemaining === 0) {
         setRunning(false);
+        startTimeRef.current = null;
       }
     };
 
-    tick();
+    tick(); // Run immediately
     const interval = setInterval(tick, 250);
     return () => clearInterval(interval);
-  }, [running, targetDate]);
+  }, [running, config.durationSeconds]);
 
   // Fullscreen API
   const enterFullscreen = useCallback(async () => {
@@ -168,8 +180,10 @@ export default function TimerApp() {
   const customStyles = {
     "--timer-primary": config.primaryColor,
     "--timer-background": config.backgroundColor,
+    "--timer-card": config.cardColor,
     "--timer-border": config.borderColor,
     "--timer-muted-foreground": config.mutedColor,
+    "--timer-foreground": config.foregroundColor,
   } as React.CSSProperties;
 
   return (
@@ -189,8 +203,8 @@ export default function TimerApp() {
           quality={90}
         />
 
-        {/* Centered FlipClock */}
-        <div className="relative z-10 flex flex-col items-center justify-center px-4">
+        {/* Centered FlipClock - moved down slightly with pt-24 */}
+        <div className="relative z-10 flex flex-col items-center justify-center px-4 pt-24">
           <FlipClock
             remainingSeconds={remaining}
             countdown
@@ -198,7 +212,6 @@ export default function TimerApp() {
             variant="default"
             showDays="auto"
             className={config.showBrackets ? "" : "[&_span[class*='absolute']]:hidden"}
-            style={{ fontFamily: config.fontFamily }}
           />
 
           {isTimeUp && (
@@ -222,7 +235,7 @@ export default function TimerApp() {
         >
           <button
             onClick={() => setShowConfig(true)}
-            className="flex items-center gap-2 bg-[--timer-card] border border-[--timer-border] px-4 py-2 text-sm text-[--timer-foreground] hover:bg-[--timer-muted] transition-colors font-['Uncut_Sans']"
+            className="flex items-center gap-2 bg-[var(--timer-card)] border border-[var(--timer-border)] px-4 py-2 text-sm text-[var(--timer-foreground)] hover:bg-[var(--timer-muted)] transition-colors font-['Uncut_Sans']"
           >
             <Settings className="h-4 w-4" />
             Config
@@ -236,15 +249,15 @@ export default function TimerApp() {
                 start();
               }
             }}
-            className="flex items-center gap-2 bg-[--timer-card] border border-[--timer-border] px-4 py-2 text-sm text-[--timer-foreground] hover:bg-[--timer-muted] transition-colors font-['Uncut_Sans']"
+            className="flex items-center gap-2 bg-[var(--timer-card)] border border-[var(--timer-border)] px-4 py-2 text-sm text-[var(--timer-foreground)] hover:bg-[var(--timer-muted)] transition-colors font-['Uncut_Sans']"
           >
             {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            {running ? "Pause" : "Start"}
+            {running ? "Pause" : pausedAt ? "Resume" : "Start"}
           </button>
 
           <button
             onClick={reset}
-            className="flex items-center gap-2 bg-[--timer-card] border border-[--timer-border] px-4 py-2 text-sm text-[--timer-foreground] hover:bg-[--timer-muted] transition-colors font-['Uncut_Sans']"
+            className="flex items-center gap-2 bg-[var(--timer-card)] border border-[var(--timer-border)] px-4 py-2 text-sm text-[var(--timer-foreground)] hover:bg-[var(--timer-muted)] transition-colors font-['Uncut_Sans']"
           >
             <RotateCcw className="h-4 w-4" />
             Reset
@@ -258,7 +271,7 @@ export default function TimerApp() {
                 await enterFullscreen();
               }
             }}
-            className="flex items-center gap-2 bg-[--timer-card] border border-[--timer-border] px-4 py-2 text-sm text-[--timer-foreground] hover:bg-[--timer-muted] transition-colors font-['Uncut_Sans']"
+            className="flex items-center gap-2 bg-[var(--timer-card)] border border-[var(--timer-border)] px-4 py-2 text-sm text-[var(--timer-foreground)] hover:bg-[var(--timer-muted)] transition-colors font-['Uncut_Sans']"
           >
             {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
             {isFullscreen ? "Exit" : "Fullscreen"}
