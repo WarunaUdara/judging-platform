@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/components/auth-provider";
+import { SerwistProvider } from "./serwist";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -32,7 +33,9 @@ export default function RootLayout({
         className="min-h-screen bg-black text-white antialiased"
         suppressHydrationWarning
       >
-        <AuthProvider>{children}</AuthProvider>
+        <SerwistProvider swUrl="/serwist/sw.js">
+          <AuthProvider>{children}</AuthProvider>
+        </SerwistProvider>
         <Toaster
           position="top-right"
           toastOptions={{
