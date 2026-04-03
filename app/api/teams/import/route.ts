@@ -7,6 +7,9 @@ import { Timestamp } from 'firebase-admin/firestore';
 /**
  * POST /api/teams/import
  * Import teams from CSV or JSON
+ * 
+ * Simplified validation: only team name is required.
+ * Members, project details are optional.
  */
 export async function POST(request: NextRequest) {
   // Verify session
@@ -33,42 +36,30 @@ export async function POST(request: NextRequest) {
       return forbiddenResponse('You do not have access to this competition');
     }
 
-    // Get competition to validate team sizes
+    // Get competition to validate it exists
     const compDoc = await adminDb.collection('competitions').doc(competitionId).get();
     if (!compDoc.exists) {
       return NextResponse.json({ error: 'Competition not found' }, { status: 404 });
     }
 
-    const competition = compDoc.data()!;
-    const { teamMinSize, teamMaxSize } = competition;
-
     const errors: Array<{ index: number; reason: string }> = [];
     const validTeams: any[] = [];
 
-    // Validate each team
+    // Validate each team - only team name is required
     teams.forEach((team, index) => {
-      if (!team.name) {
+      if (!team.name || !team.name.trim()) {
         errors.push({ index, reason: 'Missing team name' });
         return;
       }
 
-      if (!team.members || team.members.length < teamMinSize || team.members.length > teamMaxSize) {
-        errors.push({ 
-          index, 
-          reason: `Team must have between ${teamMinSize} and ${teamMaxSize} members` 
-        });
-        return;
-      }
-
-      // Validate members
-      const hasLeader = team.members.some((m: any) => m.role === 'leader');
-      if (!hasLeader) {
-        errors.push({ index, reason: 'Team must have at least one leader' });
-        return;
-      }
-
+      // Accept the team with whatever data is provided
       validTeams.push({
-        ...team,
+        name: team.name.trim(),
+        projectTitle: team.projectTitle || '',
+        domain: team.domain || '',
+        submissionUrl: team.submissionUrl || '',
+        members: team.members || [],
+        notes: team.notes || '',
         competitionId,
         importedAt: Timestamp.now(),
         status: 'registered',

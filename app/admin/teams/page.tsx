@@ -2,14 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  collection,
-  getDocs,
-  doc,
-  updateDoc,
-  deleteDoc,
-} from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
+import { Timestamp } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +16,7 @@ import {
   CheckCircle,
   Pencil,
   Trash2,
+  Plus,
 } from "lucide-react";
 import type { Competition, ImportTeamsResponse, Team } from "@/lib/types";
 import toast from "react-hot-toast";
@@ -77,6 +73,10 @@ export default function TeamsPage() {
     index: null,
     name: "",
   });
+
+  // Quick add team
+  const [quickAddName, setQuickAddName] = useState("");
+  const [addingTeam, setAddingTeam] = useState(false);
 
   useEffect(() => {
     if (role === "organizer") {
@@ -347,6 +347,50 @@ export default function TeamsPage() {
     setDeleteParsedTeamDialog({ isOpen: false, index: null, name: "" });
   };
 
+  const handleQuickAddTeam = async () => {
+    if (!selectedCompetition) {
+      toast.error("Please select a competition first");
+      return;
+    }
+    if (!quickAddName.trim()) {
+      toast.error("Please enter a team name");
+      return;
+    }
+
+    setAddingTeam(true);
+    try {
+      const now = Timestamp.now();
+      const teamData = {
+        name: quickAddName.trim(),
+        projectTitle: "",
+        domain: "",
+        submissionUrl: "",
+        members: [],
+        notes: "",
+        competitionId: selectedCompetition,
+        status: "registered" as const,
+        importedAt: now,
+      };
+
+      const docRef = await addDoc(
+        collection(db, `competitions/${selectedCompetition}/teams`),
+        teamData,
+      );
+
+      setExistingTeams([
+        ...existingTeams,
+        { id: docRef.id, ...teamData } as Team,
+      ]);
+      setQuickAddName("");
+      toast.success(`Team "${quickAddName.trim()}" added successfully`);
+    } catch (error) {
+      console.error("Error adding team:", error);
+      toast.error("Failed to add team");
+    } finally {
+      setAddingTeam(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6 lg:p-8">
@@ -386,6 +430,40 @@ export default function TeamsPage() {
         </CardContent>
       </Card>
 
+      {/* Quick Add Team */}
+      {selectedCompetition && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Quick Add Team</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-3">
+              <Input
+                value={quickAddName}
+                onChange={(e) => setQuickAddName(e.target.value)}
+                placeholder="Enter team name..."
+                className="flex-1"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !addingTeam) {
+                    handleQuickAddTeam();
+                  }
+                }}
+              />
+              <Button
+                onClick={handleQuickAddTeam}
+                disabled={addingTeam || !quickAddName.trim()}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                {addingTeam ? "Adding..." : "Add Team"}
+              </Button>
+            </div>
+            <p className="text-xs text-[#888888] mt-2">
+              Add teams one at a time. You can edit details later.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* CSV Upload */}
       <Card>
         <CardHeader>
@@ -422,11 +500,13 @@ export default function TeamsPage() {
           </div>
 
           <div className="text-xs text-[#888888] space-y-1">
-            <p>Expected CSV columns:</p>
+            <p>CSV format (only team_name is required):</p>
             <code className="block bg-[#0a0a0a] p-2 text-[#a1a1a1]">
-              team_name, project_title, domain, submission_url, member_name,
-              member_email, student_id, university
+              team_name, project_title, domain
             </code>
+            <p className="text-[#666666]">
+              Optional: project_title, domain, submission_url, member_name, member_email
+            </p>
           </div>
 
           {csvText && (

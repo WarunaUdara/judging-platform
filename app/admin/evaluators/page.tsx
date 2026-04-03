@@ -6,8 +6,8 @@ import { db } from '@/lib/firebase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Copy, Check, UserX } from 'lucide-react';
-import type { Competition, Evaluator, CreateInvitationResponse } from '@/lib/types';
+import { Plus, UserX, Mail, Key } from 'lucide-react';
+import type { Competition, Evaluator } from '@/lib/types';
 import toast from 'react-hot-toast';
 
 export default function EvaluatorsPage() {
@@ -16,12 +16,12 @@ export default function EvaluatorsPage() {
   const [evaluators, setEvaluators] = useState<Evaluator[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Invite form
-  const [showInviteForm, setShowInviteForm] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviting, setInviting] = useState(false);
-  const [inviteLink, setInviteLink] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  // Create evaluator form
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createEmail, setCreateEmail] = useState('');
+  const [createDisplayName, setCreateDisplayName] = useState('');
+  const [createPassword, setCreatePassword] = useState('');
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     const fetchCompetitions = async () => {
@@ -38,6 +38,7 @@ export default function EvaluatorsPage() {
         }
       } catch (error) {
         console.error('Error fetching competitions:', error);
+        toast.error('Failed to load competitions');
       } finally {
         setLoading(false);
       }
@@ -70,59 +71,82 @@ export default function EvaluatorsPage() {
     fetchEvaluators();
   }, [selectedCompetition]);
 
-  const handleInvite = async () => {
-    if (!inviteEmail || !selectedCompetition) {
-      toast.error('Missing required fields');
+  const generatePassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    let password = '';
+    for (let i = 0; i < 10; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setCreatePassword(password);
+  };
+
+  const handleCreateEvaluator = async () => {
+    if (!createEmail || !createDisplayName || !createPassword || !selectedCompetition) {
+      toast.error('Please fill all fields');
       return;
     }
 
-    setInviting(true);
+    if (createPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    setCreating(true);
 
     try {
-      const response = await fetch('/api/invitations/create', {
+      const response = await fetch('/api/evaluators/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: inviteEmail,
-          role: 'evaluator',
+          email: createEmail,
+          displayName: createDisplayName,
+          password: createPassword,
           competitionId: selectedCompetition,
-          orgId: 'default', // Single org for now
+          orgId: 'default',
+          sendCredentials: true,
         }),
       });
 
-      const result: CreateInvitationResponse = await response.json();
+      const result = await response.json();
 
       if (!response.ok) {
-        throw new Error((result as any).error || 'Failed to create invitation');
+        throw new Error(result.error || 'Failed to create evaluator');
       }
 
-      setInviteLink(result.inviteUrl);
-      toast.success('Invitation created');
+      if (result.emailSent) {
+        toast.success(`Evaluator created and credentials sent to ${createEmail}`);
+      } else {
+        toast.success(`Evaluator created. Email not sent - share credentials manually.`);
+      }
+
+      // Refresh evaluators list
+      const snapshot = await getDocs(
+        collection(db, `competitions/${selectedCompetition}/evaluators`)
+      );
+      const evals = snapshot.docs.map((doc) => ({
+        uid: doc.id,
+        ...doc.data(),
+      })) as Evaluator[];
+      setEvaluators(evals);
+
+      // Reset form
+      setCreateEmail('');
+      setCreateDisplayName('');
+      setCreatePassword('');
+      setShowCreateForm(false);
     } catch (error) {
-      console.error('Error creating invitation:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to create invitation');
+      console.error('Error creating evaluator:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to create evaluator');
     } finally {
-      setInviting(false);
-    }
-  };
-
-  const copyToClipboard = async () => {
-    if (!inviteLink) return;
-
-    try {
-      await navigator.clipboard.writeText(inviteLink);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      toast.success('Copied to clipboard');
-    } catch (error) {
-      toast.error('Failed to copy');
+      setCreating(false);
     }
   };
 
   const resetForm = () => {
-    setInviteEmail('');
-    setInviteLink(null);
-    setShowInviteForm(false);
+    setCreateEmail('');
+    setCreateDisplayName('');
+    setCreatePassword('');
+    setShowCreateForm(false);
   };
 
   if (loading) {
@@ -140,12 +164,12 @@ export default function EvaluatorsPage() {
         <div>
           <h1 className="text-2xl font-semibold">Evaluators</h1>
           <p className="text-[#888888] text-sm mt-1">
-            Manage judges for your competitions
+            Create and manage judges for your competitions
           </p>
         </div>
-        <Button onClick={() => setShowInviteForm(true)}>
+        <Button onClick={() => setShowCreateForm(true)}>
           <Plus className="w-4 h-4 mr-2" />
-          Invite Evaluator
+          Add Evaluator
         </Button>
       </div>
 
@@ -165,76 +189,77 @@ export default function EvaluatorsPage() {
         </select>
       </div>
 
-      {/* Invite Form */}
-      {showInviteForm && (
+      {/* Create Evaluator Form */}
+      {showCreateForm && (
         <Card className="border-[#c0c0c0]">
           <CardHeader>
-            <CardTitle className="text-base">Invite Evaluator</CardTitle>
+            <CardTitle className="text-base">Add New Evaluator</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {!inviteLink ? (
-              <>
-                <div className="space-y-2">
-                  <label className="text-sm text-[#a1a1a1]">Email Address</label>
-                  <Input
-                    type="email"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    placeholder="evaluator@example.com"
-                  />
-                </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm text-[#a1a1a1]">Display Name</label>
+                <Input
+                  value={createDisplayName}
+                  onChange={(e) => setCreateDisplayName(e.target.value)}
+                  placeholder="Judge Name"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm text-[#a1a1a1]">Email Address</label>
+                <Input
+                  type="email"
+                  value={createEmail}
+                  onChange={(e) => setCreateEmail(e.target.value)}
+                  placeholder="judge@example.com"
+                />
+              </div>
+            </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm text-[#a1a1a1]">Competition</label>
-                  <select
-                    value={selectedCompetition}
-                    onChange={(e) => setSelectedCompetition(e.target.value)}
-                    className="w-full h-10 bg-[#0a0a0a] border border-[#333333] px-3 text-sm text-white focus:border-[#c0c0c0] focus:outline-none"
-                  >
-                    {competitions.map((comp) => (
-                      <option key={comp.id} value={comp.id}>
-                        {comp.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            <div className="space-y-2">
+              <label className="text-sm text-[#a1a1a1]">Password</label>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  value={createPassword}
+                  onChange={(e) => setCreatePassword(e.target.value)}
+                  placeholder="Min. 6 characters"
+                  className="font-mono"
+                />
+                <Button type="button" variant="outline" onClick={generatePassword}>
+                  <Key className="w-4 h-4 mr-2" />
+                  Generate
+                </Button>
+              </div>
+              <p className="text-xs text-[#888888]">
+                This password will be sent to the evaluator via email
+              </p>
+            </div>
 
-                <div className="flex gap-2">
-                  <Button onClick={handleInvite} disabled={inviting}>
-                    {inviting ? 'Creating...' : 'Create Invitation'}
-                  </Button>
-                  <Button variant="outline" onClick={resetForm}>
-                    Cancel
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  <label className="text-sm text-[#a1a1a1]">Invitation Link</label>
-                  <div className="flex gap-2">
-                    <Input value={inviteLink} readOnly className="font-mono text-xs" />
-                    <Button variant="outline" onClick={copyToClipboard}>
-                      {copied ? (
-                        <Check className="w-4 h-4" />
-                      ) : (
-                        <Copy className="w-4 h-4" />
-                      )}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-[#888888]">
-                    Share this link with the evaluator. It expires in 7 days.
-                  </p>
-                </div>
+            <div className="space-y-2">
+              <label className="text-sm text-[#a1a1a1]">Competition</label>
+              <select
+                value={selectedCompetition}
+                onChange={(e) => setSelectedCompetition(e.target.value)}
+                className="w-full h-10 bg-[#0a0a0a] border border-[#333333] px-3 text-sm text-white focus:border-[#c0c0c0] focus:outline-none"
+              >
+                {competitions.map((comp) => (
+                  <option key={comp.id} value={comp.id}>
+                    {comp.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-                <div className="flex gap-2">
-                  <Button onClick={resetForm}>Invite Another</Button>
-                  <Button variant="outline" onClick={() => setShowInviteForm(false)}>
-                    Done
-                  </Button>
-                </div>
-              </>
-            )}
+            <div className="flex gap-2 pt-2">
+              <Button onClick={handleCreateEvaluator} disabled={creating}>
+                <Mail className="w-4 h-4 mr-2" />
+                {creating ? 'Creating...' : 'Create & Send Credentials'}
+              </Button>
+              <Button variant="outline" onClick={resetForm}>
+                Cancel
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -249,7 +274,11 @@ export default function EvaluatorsPage() {
       ) : evaluators.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-[#888888]">
-            No evaluators assigned to this competition
+            <p className="mb-4">No evaluators assigned to this competition</p>
+            <Button onClick={() => setShowCreateForm(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add First Evaluator
+            </Button>
           </CardContent>
         </Card>
       ) : (
@@ -273,7 +302,7 @@ export default function EvaluatorsPage() {
               </div>
               <div className="col-span-3">
                 <span className="text-xs px-2 py-1 border border-[#333333] capitalize">
-                  {evaluator.role.replace('_', ' ')}
+                  {evaluator.role?.replace('_', ' ') || 'evaluator'}
                 </span>
               </div>
               <div className="col-span-2 text-sm text-[#888888]">

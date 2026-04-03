@@ -20,7 +20,7 @@ interface DashboardStats {
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { role } = useAuth();
+  const { role, loading: authLoading } = useAuth();
 
   const [stats, setStats] = useState<DashboardStats>({
     competitions: 0,
@@ -32,8 +32,12 @@ export default function AdminDashboard() {
     [],
   );
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Wait for auth to load
+    if (authLoading) return;
+
     if (role === "organizer") {
       router.push("/admin/pending");
       return;
@@ -41,6 +45,8 @@ export default function AdminDashboard() {
 
     const fetchStats = async () => {
       try {
+        setError(null);
+        
         // Fetch competitions
         const competitionsSnap = await getDocs(collection(db, "competitions"));
         const competitions = competitionsSnap.docs.map((doc) => ({
@@ -48,50 +54,76 @@ export default function AdminDashboard() {
           ...doc.data(),
         })) as Competition[];
 
-        const activeComps = competitions.filter((c) => c.status === "active");
+        const activeComps = competitions.filter((c) => c.status === "active" || c.status === "scoring");
 
-        // Fetch teams count
+        // Fetch teams count - do this in parallel for speed
         let teamsCount = 0;
-        for (const comp of competitions) {
-          const teamsSnap = await getDocs(
-            collection(db, `competitions/${comp.id}/teams`),
-          );
-          teamsCount += teamsSnap.size;
-        }
+        const teamPromises = competitions.map(async (comp) => {
+          try {
+            const teamsSnap = await getDocs(
+              collection(db, `competitions/${comp.id}/teams`),
+            );
+            return teamsSnap.size;
+          } catch {
+            return 0;
+          }
+        });
+        const teamCounts = await Promise.all(teamPromises);
+        teamsCount = teamCounts.reduce((a, b) => a + b, 0);
 
         // Fetch evaluators count
-        const evaluatorsSnap = await getDocs(
-          query(collection(db, "users"), where("role", "==", "evaluator")),
-        );
+        let evaluatorsCount = 0;
+        try {
+          const evaluatorsSnap = await getDocs(
+            query(collection(db, "users"), where("role", "==", "evaluator")),
+          );
+          evaluatorsCount = evaluatorsSnap.size;
+        } catch (e) {
+          console.warn("Could not fetch evaluators count:", e);
+        }
 
         setStats({
           competitions: competitions.length,
           activeCompetitions: activeComps.length,
           teams: teamsCount,
-          evaluators: evaluatorsSnap.size,
+          evaluators: evaluatorsCount,
         });
 
         // Get recent competitions (sorted by createdAt)
-        const sorted = competitions.sort((a, b) => {
-          const aTime = a.createdAt?.toMillis?.() || 0;
-          const bTime = b.createdAt?.toMillis?.() || 0;
+        const sorted = [...competitions].sort((a, b) => {
+          const aTime = a.createdAt?.toMillis?.() || a.createdAt?.seconds * 1000 || 0;
+          const bTime = b.createdAt?.toMillis?.() || b.createdAt?.seconds * 1000 || 0;
           return bTime - aTime;
         });
         setRecentCompetitions(sorted.slice(0, 3));
       } catch (error) {
         console.error("Error fetching stats:", error);
+        setError("Failed to load dashboard data. Please refresh the page.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchStats();
-  }, [role, router]);
+  }, [role, router, authLoading]);
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="p-6 lg:p-8">
         <div className="text-[#888888]">Loading dashboard...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 lg:p-8">
+        <Card>
+          <CardContent className="py-8 text-center">
+            <p className="text-[#ff4444] mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>Refresh Page</Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }

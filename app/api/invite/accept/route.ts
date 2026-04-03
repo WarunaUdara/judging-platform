@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
     if (userDoc.exists) {
       await userRef.update({
         role: invite.role,
+        orgId: invite.orgId,
         competitionIds: [invite.competitionId],
         lastLoginAt: new Date().toISOString(),
       });
@@ -69,6 +70,7 @@ export async function POST(request: NextRequest) {
         displayName: decodedToken.name || email,
         photoURL: decodedToken.picture || null,
         role: invite.role,
+        orgId: invite.orgId,
         competitionIds: [invite.competitionId],
         createdAt: new Date().toISOString(),
         lastLoginAt: new Date().toISOString(),
@@ -91,22 +93,24 @@ export async function POST(request: NextRequest) {
     console.log('Set custom claims:', newClaims);
 
     if (invite.role === 'evaluator') {
+      // Create or update evaluator record using uid as the document ID
       const evaluatorRef = adminDb
         .collection('competitions')
         .doc(invite.competitionId)
         .collection('evaluators')
-        .doc(email);
+        .doc(uid);
 
-      const evaluatorDoc = await evaluatorRef.get();
-      
-      if (evaluatorDoc.exists) {
-        await evaluatorRef.update({
-          uid,
-          displayName: decodedToken.name || email,
-          isActive: true,
-        });
-        console.log('Updated evaluator record');
-      }
+      await evaluatorRef.set({
+        uid,
+        email,
+        displayName: decodedToken.name || email,
+        role: 'evaluator',
+        assignedTeamIds: [],
+        isActive: true,
+        addedAt: Timestamp.now(),
+        competitionId: invite.competitionId,
+      }, { merge: true });
+      console.log('Created/updated evaluator record');
     }
 
     await inviteDoc.ref.update({
@@ -114,15 +118,31 @@ export async function POST(request: NextRequest) {
       usedAt: Timestamp.now(),
     });
 
+    // Create session cookie for seamless redirect
+    const expiresIn = 60 * 60 * 24 * 14 * 1000; // 14 days
+    const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
+
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieOptions = {
+      maxAge: expiresIn / 1000,
+      httpOnly: true,
+      secure: isProduction,
+      path: '/',
+      sameSite: 'lax' as const,
+    };
+
     console.log('Returning role:', invite.role);
 
-    const response: AcceptInvitationResponse = {
+    const responseData: AcceptInvitationResponse = {
       success: true,
       competitionId: invite.competitionId,
       role: invite.role,
     };
 
-    return NextResponse.json(response);
+    const response = NextResponse.json(responseData);
+    response.cookies.set('session', sessionCookie, cookieOptions);
+
+    return response;
   } catch (error) {
     console.error('Accept invitation error:', error);
     return NextResponse.json(
