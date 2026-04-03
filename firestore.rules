@@ -3,23 +3,38 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function isSignedIn() { return request.auth != null; }
+    
     function hasRole(role) { 
-      return request.auth.token.role == role || getUserRole() == role;
+      return request.auth.token.role == role;
     }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
     function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return request.auth.token.role;
     }
+    
     function getUserCompetitionIds() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.competitionIds;
+      return request.auth.token.get('competitionIds', []);
     }
-    function isSuperAdmin() { return hasRole('superadmin'); }
+    
+    function isSuperAdmin() { 
+      return getUserRole() == 'superadmin'; 
+    }
+    
     function isOrganizerFor(cid) {
-      return hasRole('organizer') && (cid in request.auth.token.competitionIds || cid in getUserCompetitionIds());
+      return getUserRole() == 'organizer' && cid in getUserCompetitionIds();
     }
+    
     function isEvaluatorFor(cid) {
-      return hasRole('evaluator') && (cid in request.auth.token.competitionIds || cid in getUserCompetitionIds());
+      return getUserRole() == 'evaluator' && cid in getUserCompetitionIds();
     }
-    function isAdminFor(cid) { return isSuperAdmin() || isOrganizerFor(cid); }
+    
+    function isAdminFor(cid) { 
+      return isSuperAdmin() || isOrganizerFor(cid); 
+    }
 
     // Users collection - allow users to read their own doc
     match /users/{uid} {
@@ -28,7 +43,7 @@ service cloud.firestore {
     }
 
     match /organisations/{orgId} {
-      allow read: if isSignedIn() && request.auth.token.orgId == orgId;
+      allow read: if isSignedIn();
       allow write: if isSuperAdmin();
     }
 
@@ -45,18 +60,18 @@ service cloud.firestore {
         allow write: if isAdminFor(cid);
       }
       match /evaluators/{id} {
-        allow read: if isAdminFor(cid);
+        allow read: if isSignedIn() && (isAdminFor(cid) || isEvaluatorFor(cid));
         allow write: if false;
       }
       match /scorecards/{id} {
-        allow read: if isAdminFor(cid) ||
-          (isEvaluatorFor(cid) && resource.data.evaluatorId == request.auth.uid);
+        allow read: if isSignedIn() && (isAdminFor(cid) ||
+          (isEvaluatorFor(cid) && resource.data.evaluatorId == request.auth.uid));
         allow write: if false;
       }
       match /leaderboard_cache/{id} {
-        allow read: if isAdminFor(cid) ||
+        allow read: if isSignedIn() && (isAdminFor(cid) ||
           (isEvaluatorFor(cid) &&
-           get(/databases/$(database)/documents/competitions/$(cid)).data.scoringConfig.showLeaderboardTo == 'evaluators_and_organizers');
+           get(/databases/$(database)/documents/competitions/$(cid)).data.scoringConfig.showLeaderboardTo == 'evaluators_and_organizers'));
         allow write: if false;
       }
     }
