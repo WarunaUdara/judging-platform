@@ -38,15 +38,14 @@ function createTransporter(): Transporter | null {
   try {
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 587, // STARTTLS port (recommended)
+      port: 587, // STARTTLS port
       secure: false, // Use STARTTLS (upgrade to TLS)
       auth: {
         user: GMAIL_USER,
         pass: GMAIL_APP_PASSWORD.replace(/\s/g, ''), // Remove spaces from app password
       },
       tls: {
-        // Best practices for TLS
-        ciphers: 'SSLv3',
+        // Use secure ciphers, don't force outdated SSLv3
         rejectUnauthorized: true,
       },
       // Connection pool for better performance
@@ -54,9 +53,9 @@ function createTransporter(): Transporter | null {
       maxConnections: 5,
       maxMessages: 10,
       // Timeout settings
-      connectionTimeout: 10000, // 10 seconds
-      greetingTimeout: 5000,
-      socketTimeout: 15000,
+      connectionTimeout: 30000,
+      greetingTimeout: 30000,
+      socketTimeout: 30000,
     });
 
     return transporter;
@@ -275,19 +274,36 @@ export async function verifyGmailConnection(): Promise<{ success: boolean; error
   if (!transporter) {
     return {
       success: false,
-      error: 'Gmail SMTP not configured',
+      error: 'Gmail SMTP not configured - missing GMAIL_USER or GMAIL_APP_PASSWORD',
     };
   }
 
   try {
+    console.log('Attempting SMTP connection to smtp.gmail.com:587...');
     await transporter.verify();
     console.log('✅ Gmail SMTP connection verified');
     return { success: true };
   } catch (error: any) {
     console.error('❌ Gmail SMTP verification failed:', error.message);
+    console.error('Error code:', error.code);
+    console.error('Error response:', error.response);
+    
+    // Provide more helpful error messages
+    let helpfulError = error.message;
+    
+    if (error.code === 'ECONNREFUSED') {
+      helpfulError = 'Connection refused - firewall may be blocking port 587';
+    } else if (error.code === 'ETIMEDOUT') {
+      helpfulError = 'Connection timed out - network issue or firewall blocking SMTP';
+    } else if (error.message.includes('Greeting')) {
+      helpfulError = 'Greeting never received - usually means wrong password or auth failed';
+    } else if (error.message.includes('authentication')) {
+      helpfulError = 'Authentication failed - check App Password is correct';
+    }
+    
     return {
       success: false,
-      error: error.message,
+      error: helpfulError,
     };
   }
 }
