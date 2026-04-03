@@ -75,12 +75,12 @@ const FlipUnit = memo(function FlipUnit({
     <div className={cn(flipUnitVariants({ size, variant }), className)}>
       {/* Static top half - shows current digit always */}
       <div className={cn(commonCardStyle, "top-0 rounded-t-md")}>
-        <DigitSpan position="top">{currentDigit}</DigitSpan>
+        <DigitSpan position="top">{isFlipping ? currentDigit : digit}</DigitSpan>
       </div>
 
-      {/* Static bottom half - shows current digit */}
+      {/* Static bottom half - shows next digit when flipping, otherwise current */}
       <div className={cn(commonCardStyle, "translate-y-full rounded-b-md")}>
-        <DigitSpan position="bottom">{currentDigit}</DigitSpan>
+        <DigitSpan position="bottom">{isFlipping ? nextDigit : digit}</DigitSpan>
       </div>
 
       {/* Animated top flip - flips down from current to next */}

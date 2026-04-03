@@ -49,9 +49,9 @@ function ScoringTimer({ startTime }: { startTime: number }) {
   };
 
   return (
-    <div className="flex items-center gap-2 text-sm text-[#888888]">
-      <Clock className="w-4 h-4" />
-      <span className="font-mono">{formatTime(hours, minutes, seconds)}</span>
+    <div className="fixed top-4 right-4 z-50 flex items-center gap-2 text-sm bg-black/80 backdrop-blur-sm border border-[#333333] px-4 py-2 rounded-sm shadow-lg">
+      <Clock className="w-4 h-4 text-[#f54e00]" />
+      <span className="font-mono text-[#f54e00] font-semibold">{formatTime(hours, minutes, seconds)}</span>
     </div>
   );
 }
