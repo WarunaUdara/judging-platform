@@ -80,11 +80,11 @@ export default function AcceptInvitePage() {
 
       toast.success('Invitation accepted! Redirecting...');
 
-      // Redirect based on role
+      // Use window.location for hard redirect to ensure session cookie is sent
       if (result.role === 'evaluator') {
-        router.push('/judge/dashboard');
+        window.location.href = '/judge/dashboard';
       } else {
-        router.push('/admin');
+        window.location.href = '/admin';
       }
     } catch (err) {
       console.error('Error accepting invite:', err);

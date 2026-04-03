@@ -42,20 +42,21 @@ export default function LoginPage() {
   };
 
   const redirectByRole = (role: string) => {
+    // Use window.location for hard redirect to ensure session cookie is sent
     switch (role) {
       case "superadmin":
       case "organizer":
-        router.push("/admin");
+        window.location.href = "/admin";
         break;
       case "evaluator":
-        router.push("/judge/dashboard");
+        window.location.href = "/judge/dashboard";
         break;
       case "pending":
         toast.error("Your account is pending approval. Contact an organizer.");
-        router.push("/");
+        window.location.href = "/";
         break;
       default:
-        router.push("/");
+        window.location.href = "/";
     }
   };
 
