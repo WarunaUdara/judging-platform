@@ -47,6 +47,11 @@ export async function POST(request: NextRequest) {
 
     const competition = compDoc.data()!;
 
+    // Check competition is in scoring phase
+    if (competition.status !== 'scoring') {
+      return badRequestResponse('Competition is not in scoring phase');
+    }
+
     // Check if draft saving is allowed (when not submitting)
     if (!submit && !competition.scoringConfig.allowPartialSubmit) {
       return badRequestResponse('Draft scores are not allowed for this competition');

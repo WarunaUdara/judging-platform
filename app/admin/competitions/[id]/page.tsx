@@ -26,6 +26,7 @@ import {
   Pause,
   CheckCircle,
   Pencil,
+  RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
 import type { Competition, Criterion, Team } from "@/lib/types";
@@ -301,6 +302,12 @@ export default function CompetitionDetailPage() {
             <Button size="sm" onClick={() => updateStatus("closed")}>
               <CheckCircle className="w-4 h-4 mr-2" />
               Close
+            </Button>
+          )}
+          {competition.status === "closed" && (
+            <Button size="sm" onClick={() => updateStatus("scoring")}>
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Reopen Scoring
             </Button>
           )}
         </div>

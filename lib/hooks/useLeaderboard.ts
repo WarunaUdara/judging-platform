@@ -61,9 +61,14 @@ export function useLeaderboard(competitionId: string): UseLeaderboardReturn {
           // Extract updatedAt from wherever it is
           const timestamp = data.updatedAt || entriesData?.updatedAt || Date.now();
           
-          // Filter out non-team entries (like updatedAt)
+          // Filter out non-team entries (like updatedAt) - team entries have teamName property
           const teamEntries = Object.entries(entriesData)
-            .filter(([key]) => key !== 'updatedAt' && key.startsWith('team'))
+            .filter(([key, value]) => {
+              if (key === 'updatedAt') return false;
+              // Check if this looks like a team entry (has teamName or averageWeightedScore)
+              const v = value as Record<string, unknown>;
+              return v && (typeof v.teamName === 'string' || typeof v.averageWeightedScore === 'number');
+            })
             .map(([teamId, value]: [string, any]) => ({
               teamId,
               teamName: value.teamName || '',
