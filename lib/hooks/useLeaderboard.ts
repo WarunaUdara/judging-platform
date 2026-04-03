@@ -44,34 +44,49 @@ export function useLeaderboard(competitionId: string): UseLeaderboardReturn {
       (snapshot) => {
         try {
           const data = snapshot.val();
+          console.log('Leaderboard data received:', data);
           
-          if (data?.entries) {
-            const sorted = Object.entries(data.entries)
-              .map(([teamId, value]: [string, any]) => ({
-                teamId,
-                teamName: value.teamName || '',
-                domain: value.domain || '',
-                averageWeightedScore: value.averageWeightedScore || 0,
-                rank: value.rank || 0,
-                submittedScoreCount: value.submittedScoreCount || 0,
-              }))
-              .sort((a, b) => a.rank - b.rank);
-            
-            setEntries(sorted);
-            setUpdatedAt(data.updatedAt || Date.now());
-          } else {
+          if (!data) {
             setEntries([]);
             setUpdatedAt(null);
+            setLoading(false);
+            return;
           }
+
+          // Handle both data structures:
+          // 1. { entries: { team-1: {...}, team-2: {...} }, updatedAt: ... }
+          // 2. { entries: { team-1: {...}, team-2: {...}, updatedAt: ... } }
+          const entriesData = data.entries || data;
           
+          // Extract updatedAt from wherever it is
+          const timestamp = data.updatedAt || entriesData?.updatedAt || Date.now();
+          
+          // Filter out non-team entries (like updatedAt)
+          const teamEntries = Object.entries(entriesData)
+            .filter(([key]) => key !== 'updatedAt' && key.startsWith('team'))
+            .map(([teamId, value]: [string, any]) => ({
+              teamId,
+              teamName: value.teamName || '',
+              domain: value.domain || '',
+              averageWeightedScore: value.averageWeightedScore || 0,
+              rank: value.rank || 0,
+              submittedScoreCount: value.submittedScoreCount || 0,
+            }))
+            .sort((a, b) => a.rank - b.rank);
+          
+          console.log('Parsed leaderboard entries:', teamEntries);
+          setEntries(teamEntries);
+          setUpdatedAt(timestamp);
           setError(null);
         } catch (err) {
+          console.error('Error parsing leaderboard data:', err);
           setError(err as Error);
         } finally {
           setLoading(false);
         }
       },
       (err) => {
+        console.error('Firebase RTDB error:', err);
         setError(err as Error);
         setLoading(false);
       }

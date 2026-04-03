@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import {
   doc,
@@ -15,14 +15,45 @@ import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, ExternalLink, Save, Send } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Save, Send, Clock, Edit2 } from 'lucide-react';
 import Link from 'next/link';
-import type { Team, Criterion, Scorecard } from '@/lib/types';
+import type { Team, Criterion, Scorecard, Competition } from '@/lib/types';
 import toast from 'react-hot-toast';
 
 interface ScoreEntry {
   score: number;
   remarks: string;
+}
+
+// Timer component that counts up from when the form was opened
+function ScoringTimer({ startTime }: { startTime: number }) {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [startTime]);
+
+  const hours = Math.floor(elapsed / 3600);
+  const minutes = Math.floor((elapsed % 3600) / 60);
+  const seconds = elapsed % 60;
+
+  const formatTime = (h: number, m: number, s: number) => {
+    if (h > 0) {
+      return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="flex items-center gap-2 text-sm text-[#888888]">
+      <Clock className="w-4 h-4" />
+      <span className="font-mono">{formatTime(hours, minutes, seconds)}</span>
+    </div>
+  );
 }
 
 export default function ScoringPage() {
@@ -35,11 +66,14 @@ export default function ScoringPage() {
   const competitionId = searchParams.get('competition') || '';
 
   const [team, setTeam] = useState<Team | null>(null);
+  const [competition, setCompetition] = useState<Competition | null>(null);
   const [criteria, setCriteria] = useState<Criterion[]>([]);
   const [scores, setScores] = useState<Record<string, ScoreEntry>>({});
   const [existingScorecard, setExistingScorecard] = useState<Scorecard | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [timerStartTime] = useState(Date.now());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -49,6 +83,12 @@ export default function ScoringPage() {
       }
 
       try {
+        // Fetch competition to check allowRescoring
+        const compDoc = await getDoc(doc(db, 'competitions', competitionId));
+        if (compDoc.exists()) {
+          setCompetition({ id: compDoc.id, ...compDoc.data() } as Competition);
+        }
+
         // Fetch team
         const teamDoc = await getDoc(
           doc(db, `competitions/${competitionId}/teams`, teamId)
@@ -158,6 +198,7 @@ export default function ScoringPage() {
           teamId,
           scores,
           submit,
+          isRescore: isEditing,
         }),
       });
 
@@ -168,7 +209,7 @@ export default function ScoringPage() {
       }
 
       if (submit) {
-        toast.success('Scores submitted successfully');
+        toast.success(isEditing ? 'Scores updated successfully' : 'Scores submitted successfully');
         router.push('/judge/teams');
       } else {
         toast.success('Draft saved');
@@ -179,6 +220,11 @@ export default function ScoringPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleStartEdit = () => {
+    setIsEditing(true);
+    toast.success('Edit mode enabled. Make your changes and submit again.');
   };
 
   if (loading) {
@@ -203,6 +249,9 @@ export default function ScoringPage() {
 
   const weightedScore = calculateWeightedScore();
   const isSubmitted = existingScorecard?.status === 'submitted';
+  const allowRescoring = competition?.scoringConfig?.allowRescoring ?? false;
+  const canEdit = isSubmitted && allowRescoring && !isEditing;
+  const isFormDisabled = isSubmitted && !isEditing;
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -222,17 +271,21 @@ export default function ScoringPage() {
               {team.projectTitle || 'No project title'}
             </p>
           </div>
-          {team.submissionUrl && (
-            <a
-              href={team.submissionUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm text-[#888888] hover:text-white"
-            >
-              View Submission
-              <ExternalLink className="w-4 h-4" />
-            </a>
-          )}
+          <div className="flex items-center gap-4">
+            {/* Timer */}
+            {!isFormDisabled && <ScoringTimer startTime={timerStartTime} />}
+            {team.submissionUrl && (
+              <a
+                href={team.submissionUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm text-[#888888] hover:text-white"
+              >
+                View Submission
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            )}
+          </div>
         </div>
       </div>
 
@@ -254,11 +307,22 @@ export default function ScoringPage() {
             </div>
             <div>
               <p className="text-[#888888]">Scoring Status</p>
-              <p>{isSubmitted ? 'Submitted' : 'Draft'}</p>
+              <p className={isSubmitted ? (isEditing ? 'text-yellow-500' : 'text-green-500') : ''}>
+                {isEditing ? 'Editing' : isSubmitted ? 'Submitted' : 'Draft'}
+              </p>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Notice */}
+      {isEditing && (
+        <div className="bg-yellow-500/10 border border-yellow-500/50 p-4 text-sm">
+          <p className="text-yellow-500">
+            You are editing your previously submitted scores. Your changes will be reflected in the leaderboard after you submit.
+          </p>
+        </div>
+      )}
 
       {/* Live Score Preview */}
       <Card className="border-[#c0c0c0]">
@@ -325,7 +389,7 @@ export default function ScoringPage() {
                       )
                     }
                     className="w-24"
-                    disabled={isSubmitted}
+                    disabled={isFormDisabled}
                   />
                   <input
                     type="range"
@@ -337,7 +401,7 @@ export default function ScoringPage() {
                       updateScore(criterion.id, 'score', parseFloat(e.target.value))
                     }
                     className="flex-1 accent-white"
-                    disabled={isSubmitted}
+                    disabled={isFormDisabled}
                   />
                 </div>
               </div>
@@ -353,7 +417,7 @@ export default function ScoringPage() {
                   placeholder="Add notes about this score..."
                   rows={2}
                   className="w-full bg-[#0a0a0a] border border-[#333333] px-3 py-2 text-sm text-white placeholder:text-[#888888] focus:border-[#c0c0c0] focus:outline-none resize-none"
-                  disabled={isSubmitted}
+                  disabled={isFormDisabled}
                 />
               </div>
             </CardContent>
@@ -362,22 +426,33 @@ export default function ScoringPage() {
       </div>
 
       {/* Actions */}
-      {!isSubmitted && (
-        <div className="flex gap-4 sticky bottom-4 bg-black py-4 border-t border-[#333333]">
-          <Button
-            variant="outline"
-            onClick={() => handleSave(false)}
-            disabled={submitting}
-          >
-            <Save className="w-4 h-4 mr-2" />
-            Save Draft
+      <div className="flex gap-4 sticky bottom-4 bg-black py-4 border-t border-[#333333]">
+        {canEdit ? (
+          <Button onClick={handleStartEdit}>
+            <Edit2 className="w-4 h-4 mr-2" />
+            Edit Scores
           </Button>
-          <Button onClick={() => handleSave(true)} disabled={submitting}>
-            <Send className="w-4 h-4 mr-2" />
-            Submit Scores
-          </Button>
-        </div>
-      )}
+        ) : !isFormDisabled ? (
+          <>
+            <Button
+              variant="outline"
+              onClick={() => handleSave(false)}
+              disabled={submitting}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Save Draft
+            </Button>
+            <Button onClick={() => handleSave(true)} disabled={submitting}>
+              <Send className="w-4 h-4 mr-2" />
+              {isEditing ? 'Update Scores' : 'Submit Scores'}
+            </Button>
+          </>
+        ) : (
+          <div className="text-sm text-[#888888]">
+            Scores have been submitted and rescoring is not allowed for this competition.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

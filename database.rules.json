@@ -3,7 +3,13 @@
     "leaderboards": {
       "$competitionId": {
         ".read": "auth != null",
-        ".write": false
+        ".write": false,
+        "entries": {
+          ".read": "auth != null",
+          "$teamId": {
+            ".read": "auth != null"
+          }
+        }
       }
     }
   }
