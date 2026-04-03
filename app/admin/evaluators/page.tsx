@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Plus, UserX, Mail, Key } from 'lucide-react';
 import type { Competition, Evaluator } from '@/lib/types';
 import toast from 'react-hot-toast';
@@ -22,6 +23,10 @@ export default function EvaluatorsPage() {
   const [createDisplayName, setCreateDisplayName] = useState('');
   const [createPassword, setCreatePassword] = useState('');
   const [creating, setCreating] = useState(false);
+
+  // Delete confirmation dialog
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [evaluatorToDelete, setEvaluatorToDelete] = useState<Evaluator | null>(null);
 
   useEffect(() => {
     const fetchCompetitions = async () => {
@@ -149,13 +154,11 @@ export default function EvaluatorsPage() {
     setShowCreateForm(false);
   };
 
-  const handleDeleteEvaluator = async (evaluator: Evaluator) => {
-    if (!confirm(`Are you sure you want to delete evaluator "${evaluator.displayName}"?\n\nThis will:\n- Remove their account permanently\n- Delete all their data\n- This action cannot be undone`)) {
-      return;
-    }
+  const handleDeleteEvaluator = async () => {
+    if (!evaluatorToDelete) return;
 
     try {
-      const response = await fetch(`/api/evaluators/${evaluator.uid}`, {
+      const response = await fetch(`/api/evaluators/${evaluatorToDelete.uid}`, {
         method: 'DELETE',
       });
 
@@ -181,7 +184,15 @@ export default function EvaluatorsPage() {
     } catch (error) {
       console.error('Error deleting evaluator:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to delete evaluator');
+    } finally {
+      setEvaluatorToDelete(null);
+      setShowDeleteDialog(false);
     }
+  };
+
+  const confirmDelete = (evaluator: Evaluator) => {
+    setEvaluatorToDelete(evaluator);
+    setShowDeleteDialog(true);
   };
 
   if (loading) {
@@ -193,7 +204,8 @@ export default function EvaluatorsPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <>
+      <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -359,7 +371,7 @@ export default function EvaluatorsPage() {
                   variant="ghost"
                   size="icon"
                   className="text-[#888888] hover:text-[#ff4444]"
-                  onClick={() => handleDeleteEvaluator(evaluator)}
+                  onClick={() => confirmDelete(evaluator)}
                 >
                   <UserX className="w-4 h-4" />
                 </Button>
@@ -369,5 +381,30 @@ export default function EvaluatorsPage() {
         </div>
       )}
     </div>
+
+    <ConfirmDialog
+      isOpen={showDeleteDialog}
+      title="Delete Evaluator"
+      description={
+        <div className="space-y-2">
+          <p>Are you sure you want to delete evaluator <span className="text-white font-medium">{evaluatorToDelete?.displayName}</span>?</p>
+          <p className="text-sm text-[#888888]">This will:</p>
+          <ul className="text-sm text-[#888888] list-disc list-inside">
+            <li>Remove their access to this competition</li>
+            <li>Delete all their scores</li>
+            <li>This action cannot be undone</li>
+          </ul>
+        </div>
+      }
+      confirmText="Delete"
+      cancelText="Cancel"
+      onConfirm={handleDeleteEvaluator}
+      onCancel={() => {
+        setShowDeleteDialog(false);
+        setEvaluatorToDelete(null);
+      }}
+      isDestructive
+    />
+    </>
   );
 }
