@@ -121,7 +121,11 @@ export default function EvaluatorsPage() {
       if (result.emailSent) {
         toast.success(`Evaluator created and credentials sent to ${createEmail}`);
       } else {
-        toast.success(`Evaluator created. Email not sent - share credentials manually.`);
+        const errorMsg = result.emailError 
+          ? `Email failed: ${result.emailError}` 
+          : 'Email not sent - share credentials manually';
+        toast.error(`Evaluator created but ${errorMsg}`);
+        console.log('Email error details:', result.emailError);
       }
 
       // Refresh evaluators list

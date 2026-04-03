@@ -98,12 +98,21 @@ export async function POST(request: NextRequest) {
 
     // Send credentials via email
     let emailSent = false;
+    let emailError = null;
     if (sendCredentials && process.env.RESEND_API_KEY) {
       try {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const fromAddress = process.env.EMAIL_FROM_ADDRESS || 'CryptX Judging Platform <onboarding@resend.dev>';
         
-        await resend.emails.send({
-          from: 'CryptX Judging Platform <onboarding@resend.dev>',
+        // Format from address if it doesn't include display name
+        const formattedFrom = fromAddress.includes('<') 
+          ? fromAddress 
+          : `CryptX Judging Platform <${fromAddress}>`;
+        
+        console.log('Attempting to send email from:', formattedFrom, 'to:', email);
+        
+        const result = await resend.emails.send({
+          from: formattedFrom,
           to: email,
           subject: `Your Evaluator Account for ${competitionName}`,
           html: `
@@ -152,9 +161,15 @@ export async function POST(request: NextRequest) {
           `,
         });
         emailSent = true;
-        console.log('Credentials email sent to:', email);
-      } catch (emailError) {
-        console.error('Failed to send credentials email:', emailError);
+        console.log('✅ Email sent successfully. ID:', result.data?.id);
+      } catch (error: any) {
+        emailError = error.message || JSON.stringify(error);
+        console.error('❌ Failed to send credentials email:', error);
+        console.error('Error details:', {
+          message: error.message,
+          statusCode: error.statusCode,
+          name: error.name,
+        });
         // Don't fail the whole operation if email fails
       }
     }
@@ -183,6 +198,7 @@ export async function POST(request: NextRequest) {
         displayName,
       },
       emailSent,
+      emailError: emailError || undefined,
     });
   } catch (error) {
     console.error('Create evaluator error:', error);
