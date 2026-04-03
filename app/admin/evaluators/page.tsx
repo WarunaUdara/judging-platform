@@ -149,6 +149,41 @@ export default function EvaluatorsPage() {
     setShowCreateForm(false);
   };
 
+  const handleDeleteEvaluator = async (evaluator: Evaluator) => {
+    if (!confirm(`Are you sure you want to delete evaluator "${evaluator.displayName}"?\n\nThis will:\n- Remove their account permanently\n- Delete all their data\n- This action cannot be undone`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/evaluators/${evaluator.uid}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete evaluator');
+      }
+
+      toast.success('Evaluator deleted successfully');
+
+      // Refresh evaluators list
+      if (selectedCompetition) {
+        const snapshot = await getDocs(
+          collection(db, `competitions/${selectedCompetition}/evaluators`)
+        );
+        const evals = snapshot.docs.map((doc) => ({
+          uid: doc.id,
+          ...doc.data(),
+        })) as Evaluator[];
+        setEvaluators(evals);
+      }
+    } catch (error) {
+      console.error('Error deleting evaluator:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete evaluator');
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6 lg:p-8">
@@ -324,6 +359,7 @@ export default function EvaluatorsPage() {
                   variant="ghost"
                   size="icon"
                   className="text-[#888888] hover:text-[#ff4444]"
+                  onClick={() => handleDeleteEvaluator(evaluator)}
                 >
                   <UserX className="w-4 h-4" />
                 </Button>
