@@ -31,7 +31,7 @@ function mapSize(fontSize: number): "sm" | "md" | "lg" | "xl" {
 
 export default function TimerDisplay({ config, mediaURL, onBack }: TimerDisplayProps) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hideTimerRef = useRef<number | null>(null);
   const hasAutoStartedRef = useRef(false);
 
   const { isFullscreen, enter, exit } = useFullscreen(rootRef);
