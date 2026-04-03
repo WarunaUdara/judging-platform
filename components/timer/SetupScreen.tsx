@@ -34,6 +34,8 @@ const FONT_OPTIONS = [
   "ui-serif",
   "ui-monospace",
   "var(--font-inter)",
+  "'Uncut Sans'",
+  "'Hacked KerX'",
   "Roboto Mono",
   "Oswald",
   "Anton",
@@ -196,9 +198,9 @@ export default function SetupScreen({
   };
 
   return (
-    <main className="min-h-screen bg-[#050505] px-4 py-6 text-white sm:px-8">
-      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="space-y-6">
+    <main className="min-h-screen bg-[#050505] px-4 py-6 pb-28 text-white sm:px-8 sm:pb-32">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Event Info</CardTitle>
@@ -231,6 +233,17 @@ export default function SetupScreen({
 
           <Card>
             <CardHeader>
+              <CardTitle>Live Preview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ClockPreview config={draft} />
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
               <CardTitle>Timer Duration</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -251,17 +264,6 @@ export default function SetupScreen({
                   />
                 </div>
               ))}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Live Preview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ClockPreview config={draft} />
             </CardContent>
           </Card>
 
@@ -297,7 +299,13 @@ export default function SetupScreen({
                   >
                     {FONT_OPTIONS.map((font) => (
                       <option key={font} value={font}>
-                        {font === "var(--font-inter)" ? "Inter (App Default)" : font}
+                        {font === "var(--font-inter)"
+                          ? "Inter (App Default)"
+                          : font === "'Uncut Sans'"
+                            ? "Uncut Sans (Local)"
+                            : font === "'Hacked KerX'"
+                              ? "Hacked KerX (Local)"
+                              : font}
                       </option>
                     ))}
                   </select>
@@ -366,7 +374,9 @@ export default function SetupScreen({
               </div>
             </CardContent>
           </Card>
+        </div>
 
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Background</CardTitle>
@@ -475,10 +485,16 @@ export default function SetupScreen({
               </Button>
             </CardContent>
           </Card>
+        </div>
+      </div>
 
-          <Button className="w-full" size="lg" disabled={!canStart} onClick={() => void startTimer()}>
-            Start Timer
-          </Button>
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4 pb-4 sm:px-8 sm:pb-6">
+        <div className="pointer-events-auto mx-auto w-full max-w-7xl">
+          <div className="rounded-xl border border-[#2c2c2c] bg-[#0b0b0b]/95 p-3 shadow-2xl backdrop-blur-md">
+            <Button className="w-full" size="lg" disabled={!canStart} onClick={() => void startTimer()}>
+              Start Timer
+            </Button>
+          </div>
         </div>
       </div>
     </main>

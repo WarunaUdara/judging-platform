@@ -119,6 +119,8 @@ export default function TimerDisplay({ config, mediaURL, onBack }: TimerDisplayP
 
   const titleColor = config.titleStyle.color || "#ffffff";
   const subtitleColor = config.subtitleStyle.color || "#d4d4d8";
+  const titleFontSize = Math.max(1, config.titleStyle.fontSize || 48);
+  const subtitleFontSize = Math.max(1, config.subtitleStyle.fontSize || 28);
   const digitColor = config.clockStyle.color || "#ffffff";
   const digitFontSize = Math.max(16, config.clockStyle.fontSize || 64);
   const digitFamily = config.clockStyle.fontFamily || "monospace";
@@ -134,7 +136,7 @@ export default function TimerDisplay({ config, mediaURL, onBack }: TimerDisplayP
           style={{
             color: titleColor,
             fontFamily: config.titleStyle.fontFamily,
-            fontSize: `clamp(2rem, 5vw, ${config.titleStyle.fontSize}px)`,
+            fontSize: `${titleFontSize}px`,
             fontWeight: config.titleStyle.fontWeight,
           }}
         >
@@ -147,7 +149,7 @@ export default function TimerDisplay({ config, mediaURL, onBack }: TimerDisplayP
             style={{
               color: subtitleColor,
               fontFamily: config.subtitleStyle.fontFamily,
-              fontSize: `clamp(1rem, 2.5vw, ${config.subtitleStyle.fontSize}px)`,
+              fontSize: `${subtitleFontSize}px`,
               fontWeight: config.subtitleStyle.fontWeight,
             }}
           >

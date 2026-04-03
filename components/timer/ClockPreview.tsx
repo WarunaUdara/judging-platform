@@ -38,7 +38,7 @@ export default function ClockPreview({ config }: ClockPreviewProps) {
           style={{
             color: titleColor,
             fontFamily: config.titleStyle.fontFamily,
-            fontSize: `${Math.max(22, Math.min(44, config.titleStyle.fontSize))}px`,
+            fontSize: `${Math.max(1, config.titleStyle.fontSize)}px`,
             fontWeight: config.titleStyle.fontWeight,
           }}
         >
@@ -50,7 +50,7 @@ export default function ClockPreview({ config }: ClockPreviewProps) {
           style={{
             color: subtitleColor,
             fontFamily: config.subtitleStyle.fontFamily,
-            fontSize: `${Math.max(14, Math.min(30, config.subtitleStyle.fontSize))}px`,
+            fontSize: `${Math.max(1, config.subtitleStyle.fontSize)}px`,
             fontWeight: config.subtitleStyle.fontWeight,
           }}
         >
