@@ -38,14 +38,13 @@ function createTransporter(): Transporter | null {
   try {
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 587, // STARTTLS port
-      secure: false, // Use STARTTLS (upgrade to TLS)
+      port: 465, // SSL port - works better with VPNs
+      secure: true, // Use SSL
       auth: {
         user: GMAIL_USER,
         pass: GMAIL_APP_PASSWORD.replace(/\s/g, ''), // Remove spaces from app password
       },
       tls: {
-        // Use secure ciphers, don't force outdated SSLv3
         rejectUnauthorized: true,
       },
       // Connection pool for better performance
