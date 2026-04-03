@@ -2,13 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { verifySession, isAdmin } from '@/lib/utils/auth';
 import { Timestamp } from 'firebase-admin/firestore';
-import { sendEvaluatorCredentials } from '@/lib/email/gmail';
 
 /**
  * POST /api/evaluators/create
- * Directly create evaluator account (no invites needed)
- * Admin creates account with email/password and auto-sends credentials via email
- * Uses Gmail SMTP for email delivery
+ * Create evaluator account with email/password
+ * Credentials are shown on screen for admin to manually setup
  */
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { email, displayName, password, competitionId, orgId, assignedTeamIds, sendCredentials = true } = body;
+    const { email, displayName, password, competitionId, orgId, assignedTeamIds } = body;
 
     if (!email || !displayName || !password || !competitionId || !orgId) {
       return NextResponse.json(
@@ -34,10 +32,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    // Get competition name for email
-    const competitionDoc = await adminDb.collection('competitions').doc(competitionId).get();
-    const competitionName = competitionDoc.data()?.name || 'Competition';
 
     // Create Firebase Auth user
     let user;
@@ -95,35 +89,6 @@ export async function POST(request: NextRequest) {
         competitionId,
       });
 
-    // Send credentials via email using Gmail SMTP
-    let emailSent = false;
-    let emailError = null;
-    if (sendCredentials) {
-      try {
-        console.log('📧 Attempting to send credentials email to:', email);
-        
-        const result = await sendEvaluatorCredentials({
-          email,
-          displayName,
-          password,
-          competitionName,
-        });
-
-        if (result.success) {
-          emailSent = true;
-          console.log('✅ Email sent successfully. Message ID:', result.messageId);
-        } else {
-          emailError = result.error || 'Unknown error';
-          console.error('❌ Failed to send email:', emailError);
-        }
-      } catch (error: any) {
-        emailError = error.message || 'Failed to send email';
-        console.error('❌ Email sending exception:', error);
-      }
-    } else {
-      console.log('📧 Email sending skipped (sendCredentials=false)');
-    }
-
     // Write audit log
     await adminDb.collection('audit_logs').add({
       action: 'evaluator.create',
@@ -136,7 +101,6 @@ export async function POST(request: NextRequest) {
       meta: {
         email,
         displayName,
-        emailSent,
       },
     });
 
@@ -147,8 +111,10 @@ export async function POST(request: NextRequest) {
         email,
         displayName,
       },
-      emailSent,
-      emailError: emailError || undefined,
+      credentials: {
+        email,
+        password,
+      },
     });
   } catch (error) {
     console.error('Create evaluator error:', error);

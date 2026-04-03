@@ -117,7 +117,6 @@ export default function EvaluatorsPage() {
           password: createPassword,
           competitionId: selectedCompetition,
           orgId: 'default',
-          sendCredentials: true,
         }),
       });
 
@@ -131,20 +130,12 @@ export default function EvaluatorsPage() {
       setCreatedCredentials({
         email: createEmail,
         password: createPassword,
-        emailSent: result.emailSent,
-        emailError: result.emailError,
+        emailSent: false,
+        emailError: undefined,
       });
       setShowCredentialsDialog(true);
 
-      if (result.emailSent) {
-        toast.success(`Evaluator created and credentials sent to ${createEmail}`);
-      } else {
-        const errorMsg = result.emailError 
-          ? `${result.emailError}` 
-          : 'Unknown error';
-        toast.error(`Evaluator created but email failed: ${errorMsg}`);
-        console.error('Email error details:', result.emailError);
-      }
+      toast.success(`Evaluator created successfully`);
 
       // Refresh evaluators list
       const snapshot = await getDocs(
@@ -430,26 +421,21 @@ export default function EvaluatorsPage() {
 
     <ConfirmDialog
       isOpen={showCredentialsDialog}
-      title={createdCredentials?.emailSent ? 'Evaluator Created & Email Sent' : 'Evaluator Created - Email Failed'}
+      title="Evaluator Created Successfully"
       description={
         <div className="space-y-4">
-          {createdCredentials?.emailSent ? (
-            <div className="p-3 bg-green-950/30 border border-green-800 text-green-300 text-sm">
-              ✅ Credentials email sent successfully to <span className="font-mono">{createdCredentials.email}</span>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="p-3 bg-red-950/30 border border-red-800 text-red-300 text-sm">
-                ❌ Email sending failed. Please share these credentials manually:
-              </div>
-              {createdCredentials?.emailError && (
-                <div className="p-3 bg-[#111111] border border-[#333333] text-sm">
-                  <div className="text-[#888888] mb-1">Error Details:</div>
-                  <div className="text-red-400 font-mono text-xs break-all">{createdCredentials.emailError}</div>
-                </div>
-              )}
-            </div>
-          )}
+          <div className="p-3 bg-green-950/30 border border-green-800 text-green-300 text-sm">
+            ✅ Evaluator account created successfully
+          </div>
+
+          <div className="p-3 bg-blue-950/30 border border-blue-800 text-blue-200 text-sm">
+            💡 <strong>Setup Instructions:</strong>
+            <ol className="mt-2 space-y-1 list-decimal list-inside text-xs">
+              <li>Copy the credentials below</li>
+              <li>Login to a laptop/device as this evaluator</li>
+              <li>They will see the leaderboard and can submit scores</li>
+            </ol>
+          </div>
           
           <div className="p-4 bg-[#111111] border border-[#333333] space-y-3">
             <div className="text-sm text-[#888888]">Login Credentials</div>
@@ -470,17 +456,15 @@ export default function EvaluatorsPage() {
                   toast.success('Credentials copied to clipboard');
                 }
               }}
-              className="text-xs text-[#888888] hover:text-white transition-colors"
+              className="w-full text-sm bg-white text-black hover:bg-gray-200 transition-colors py-2 px-4 font-medium"
             >
-              📋 Copy credentials to clipboard
+              📋 Copy Credentials
             </button>
           </div>
 
-          {!createdCredentials?.emailSent && (
-            <div className="p-3 bg-yellow-950/20 border border-yellow-800/50 text-yellow-200 text-xs">
-              💡 Check Resend dashboard at https://resend.com/emails to see delivery logs
-            </div>
-          )}
+          <div className="p-3 bg-yellow-950/20 border border-yellow-800/50 text-yellow-200 text-xs">
+            ⚠️ <strong>Important:</strong> Save these credentials securely. They are only shown once.
+          </div>
         </div>
       }
       confirmText="Done"
