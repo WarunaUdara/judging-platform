@@ -1,17 +1,11 @@
 "use client";
 
 import { cva, type VariantProps } from "class-variance-authority";
-import {
-  type CSSProperties,
-  type FC,
-  type HTMLAttributes,
-  type ReactNode,
-  memo,
-} from "react";
+import { type CSSProperties, type FC, type HTMLAttributes, type ReactNode, memo } from "react";
 import { cn } from "@/lib/utils/cn";
 
 const flipUnitVariants = cva(
-  "relative overflow-hidden rounded-md subpixel-antialiased perspective-[1000px]",
+  "relative overflow-hidden rounded-md border border-[#333333] bg-[#111111] subpixel-antialiased",
   {
     variants: {
       size: {
@@ -21,8 +15,8 @@ const flipUnitVariants = cva(
         xl: "h-32 min-w-[5.5rem] w-[5.5rem] text-8xl",
       },
       variant: {
-        default: "bg-primary text-primary-foreground",
-        secondary: "bg-secondary text-secondary-foreground",
+        default: "bg-[#111111] text-white",
+        secondary: "bg-[#1a1a1a] text-white",
         destructive: "bg-red-600 text-white",
         outline: "border border-input bg-background text-foreground",
         muted: "bg-muted text-muted-foreground",
@@ -73,7 +67,7 @@ const FlipUnit: FC<FlipUnitProps> = memo(function FlipUnit({
         <DigitSpan position="bottom">{digit}</DigitSpan>
       </div>
 
-      <div className="absolute top-1/2 left-0 z-30 h-px w-full -translate-y-1/2 bg-background/50" />
+      <div className="absolute top-1/2 left-0 z-30 h-px w-full -translate-y-1/2 bg-white/20" />
     </div>
   );
 });
@@ -114,7 +108,7 @@ function ClockSeparator({ size, color }: { size?: FlipClockSize; color?: string 
   );
 }
 
-const flipClockVariants = cva("relative flex items-center justify-center font-mono font-medium", {
+const flipClockVariants = cva("relative flex items-center justify-center font-medium", {
   variants: {
     size: {
       sm: "space-x-1 text-3xl",

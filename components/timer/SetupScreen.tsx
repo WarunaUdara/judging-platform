@@ -25,7 +25,30 @@ const GOOGLE_FONT_LINKS: Record<string, string> = {
   Anton: "https://fonts.googleapis.com/css2?family=Anton&display=swap",
 };
 
-const FONT_OPTIONS = ["monospace", "serif", "sans-serif", "Roboto Mono", "Oswald", "Anton"];
+const FONT_OPTIONS = [
+  "monospace",
+  "serif",
+  "sans-serif",
+  "system-ui",
+  "ui-sans-serif",
+  "ui-serif",
+  "ui-monospace",
+  "var(--font-inter)",
+  "Roboto Mono",
+  "Oswald",
+  "Anton",
+];
+
+const COLOR_PRESETS = [
+  "#ffffff",
+  "#c0c0c0",
+  "#a1a1aa",
+  "#8b5cf6",
+  "#22d3ee",
+  "#f97316",
+  "#ef4444",
+  "#22c55e",
+];
 
 function formatBytes(size: number) {
   if (size < 1024) {
@@ -89,16 +112,19 @@ export default function SetupScreen({
   }, [draft.clockStyle, draft.subtitleStyle, draft.titleStyle, styleTab]);
 
   const updateStyle = (nextStyle: TextStyle) => {
-    setDraft((prev) => {
-      const next: TimerConfig = {
-        ...prev,
-        ...(styleTab === "clock" ? { clockStyle: nextStyle } : {}),
-        ...(styleTab === "title" ? { titleStyle: nextStyle } : {}),
-        ...(styleTab === "subtitle" ? { subtitleStyle: nextStyle } : {}),
-      };
-      onSave(next);
-      return next;
-    });
+    const next: TimerConfig = {
+      ...draft,
+      ...(styleTab === "clock" ? { clockStyle: nextStyle } : {}),
+      ...(styleTab === "title" ? { titleStyle: nextStyle } : {}),
+      ...(styleTab === "subtitle" ? { subtitleStyle: nextStyle } : {}),
+    };
+
+    setDraft(next);
+    onSave(next);
+  };
+
+  const updateStyleField = <K extends keyof TextStyle>(field: K, value: TextStyle[K]) => {
+    updateStyle({ ...activeStyle, [field]: value });
   };
 
   const updateDuration = (key: "days" | "hours" | "minutes" | "seconds", value: number) => {
@@ -121,11 +147,9 @@ export default function SetupScreen({
       nextDuration.minutes * 60 +
       nextDuration.seconds;
 
-    setDraft((prev) => {
-      const next = { ...prev, targetSeconds: total };
-      onSave(next);
-      return next;
-    });
+    const next = { ...draft, targetSeconds: total };
+    setDraft(next);
+    onSave(next);
   };
 
   const applyConfig = (next: TimerConfig) => {
@@ -273,7 +297,7 @@ export default function SetupScreen({
                   >
                     {FONT_OPTIONS.map((font) => (
                       <option key={font} value={font}>
-                        {font}
+                        {font === "var(--font-inter)" ? "Inter (App Default)" : font}
                       </option>
                     ))}
                   </select>
@@ -284,11 +308,36 @@ export default function SetupScreen({
                   <input
                     className="h-10 w-full"
                     type="range"
-                    min={24}
+                    min={16}
                     max={200}
                     value={activeStyle.fontSize}
-                    onChange={(event) => updateStyle({ ...activeStyle, fontSize: Number(event.target.value) })}
+                    onChange={(event) => updateStyleField("fontSize", Number(event.target.value))}
                   />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-sm text-[#a1a1aa]">Exact size (px)</label>
+                  <Input
+                    type="number"
+                    min={12}
+                    max={300}
+                    value={activeStyle.fontSize}
+                    onChange={(event) => updateStyleField("fontSize", Math.max(12, Number(event.target.value) || 12))}
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm text-[#a1a1aa]">Weight</label>
+                  <select
+                    className="h-10 w-full border border-[#333333] bg-[#0a0a0a] px-3 text-sm"
+                    value={activeStyle.fontWeight}
+                    onChange={(event) => updateStyleField("fontWeight", event.target.value as TextStyle["fontWeight"])}
+                  >
+                    <option value="normal">Normal</option>
+                    <option value="bold">Bold</option>
+                  </select>
                 </div>
               </div>
 
@@ -298,21 +347,22 @@ export default function SetupScreen({
                   <input
                     type="color"
                     value={activeStyle.color}
-                    onChange={(event) => updateStyle({ ...activeStyle, color: event.target.value })}
+                    onChange={(event) => updateStyleField("color", event.target.value)}
                   />
                 </label>
 
-                <Button
-                  variant={activeStyle.fontWeight === "bold" ? "default" : "outline"}
-                  onClick={() =>
-                    updateStyle({
-                      ...activeStyle,
-                      fontWeight: activeStyle.fontWeight === "bold" ? "normal" : "bold",
-                    })
-                  }
-                >
-                  {activeStyle.fontWeight === "bold" ? "Bold On" : "Bold Off"}
-                </Button>
+                <div className="flex flex-wrap justify-end gap-2">
+                  {COLOR_PRESETS.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      aria-label={`Use color ${color}`}
+                      className="h-7 w-7 border border-[#444]"
+                      style={{ backgroundColor: color }}
+                      onClick={() => updateStyleField("color", color)}
+                    />
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>

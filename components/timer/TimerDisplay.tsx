@@ -17,13 +17,13 @@ interface TimerDisplayProps {
 }
 
 function mapSize(fontSize: number): "sm" | "md" | "lg" | "xl" {
-  if (fontSize < 44) {
+  if (fontSize < 34) {
     return "sm";
   }
-  if (fontSize < 76) {
+  if (fontSize < 56) {
     return "md";
   }
-  if (fontSize < 108) {
+  if (fontSize < 84) {
     return "lg";
   }
   return "xl";
@@ -116,6 +116,12 @@ export default function TimerDisplay({ config, mediaURL, onBack }: TimerDisplayP
     return <div className="timer-gradient absolute inset-0 z-0" />;
   }, [config.backgroundType, mediaURL]);
 
+  const titleColor = config.titleStyle.color || "#ffffff";
+  const subtitleColor = config.subtitleStyle.color || "#d4d4d8";
+  const digitColor = config.clockStyle.color || "#ffffff";
+  const digitFontSize = Math.max(16, config.clockStyle.fontSize || 64);
+  const digitFamily = config.clockStyle.fontFamily || "monospace";
+
   return (
     <div ref={rootRef} className="fixed inset-0 z-50 overflow-hidden bg-black text-white">
       {backgroundLayer}
@@ -125,7 +131,7 @@ export default function TimerDisplay({ config, mediaURL, onBack }: TimerDisplayP
         <h1
           className="max-w-6xl break-words leading-tight"
           style={{
-            color: config.titleStyle.color,
+            color: titleColor,
             fontFamily: config.titleStyle.fontFamily,
             fontSize: `clamp(2rem, 5vw, ${config.titleStyle.fontSize}px)`,
             fontWeight: config.titleStyle.fontWeight,
@@ -138,7 +144,7 @@ export default function TimerDisplay({ config, mediaURL, onBack }: TimerDisplayP
           <p
             className="mt-2 max-w-5xl break-words"
             style={{
-              color: config.subtitleStyle.color,
+              color: subtitleColor,
               fontFamily: config.subtitleStyle.fontFamily,
               fontSize: `clamp(1rem, 2.5vw, ${config.subtitleStyle.fontSize}px)`,
               fontWeight: config.subtitleStyle.fontWeight,
@@ -153,9 +159,9 @@ export default function TimerDisplay({ config, mediaURL, onBack }: TimerDisplayP
             remainingSeconds={remaining}
             showDays={showDays}
             size={mapSize(config.clockStyle.fontSize)}
-            digitColor={config.clockStyle.color}
-            digitFontFamily={config.clockStyle.fontFamily}
-            digitFontSize={config.clockStyle.fontSize}
+            digitColor={digitColor}
+            digitFontFamily={digitFamily}
+            digitFontSize={digitFontSize}
             className={config.clockStyle.fontWeight === "bold" ? "font-bold" : "font-normal"}
           />
         </div>

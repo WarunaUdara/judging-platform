@@ -8,15 +8,15 @@ interface ClockPreviewProps {
 }
 
 function mapSize(fontSize: number): "sm" | "md" | "lg" | "xl" {
-  if (fontSize < 44) {
+  if (fontSize < 34) {
     return "sm";
   }
 
-  if (fontSize < 76) {
+  if (fontSize < 56) {
     return "md";
   }
 
-  if (fontSize < 108) {
+  if (fontSize < 84) {
     return "lg";
   }
 
@@ -24,13 +24,19 @@ function mapSize(fontSize: number): "sm" | "md" | "lg" | "xl" {
 }
 
 export default function ClockPreview({ config }: ClockPreviewProps) {
+  const titleColor = config.titleStyle.color || "#ffffff";
+  const subtitleColor = config.subtitleStyle.color || "#d4d4d8";
+  const digitColor = config.clockStyle.color || "#ffffff";
+  const digitSize = Math.max(16, config.clockStyle.fontSize || 64);
+  const digitFamily = config.clockStyle.fontFamily || "monospace";
+
   return (
     <div className="border border-[#333333] bg-black/70 p-6">
       <div className="mb-6 text-center">
         <h3
           className="break-words leading-tight"
           style={{
-            color: config.titleStyle.color,
+            color: titleColor,
             fontFamily: config.titleStyle.fontFamily,
             fontSize: `${Math.max(22, Math.min(44, config.titleStyle.fontSize))}px`,
             fontWeight: config.titleStyle.fontWeight,
@@ -42,7 +48,7 @@ export default function ClockPreview({ config }: ClockPreviewProps) {
         <p
           className="mt-2 break-words"
           style={{
-            color: config.subtitleStyle.color,
+            color: subtitleColor,
             fontFamily: config.subtitleStyle.fontFamily,
             fontSize: `${Math.max(14, Math.min(30, config.subtitleStyle.fontSize))}px`,
             fontWeight: config.subtitleStyle.fontWeight,
@@ -57,9 +63,9 @@ export default function ClockPreview({ config }: ClockPreviewProps) {
           remainingSeconds={Math.max(0, config.targetSeconds)}
           showDays={config.targetSeconds >= 86400}
           size={mapSize(config.clockStyle.fontSize)}
-          digitColor={config.clockStyle.color}
-          digitFontFamily={config.clockStyle.fontFamily}
-          digitFontSize={config.clockStyle.fontSize}
+          digitColor={digitColor}
+          digitFontFamily={digitFamily}
+          digitFontSize={digitSize}
           className={config.clockStyle.fontWeight === "bold" ? "font-bold" : "font-normal"}
         />
       </div>
