@@ -75,7 +75,7 @@ export default function HomePage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-[#333333]">
               <div className="bg-black p-8 md:p-10 flex flex-col">
                 <div className="w-10 h-10 border border-[#333333] flex items-center justify-center mb-6">
-                  <Layers className="w-5 h-5 text-[#8b5cf6]" />
+                  <Layers className="w-5 h-5 text-[#f54e00]" />
                 </div>
                 <p className="text-xs text-[#c0c0c0] font-medium tracking-widest mb-3">01</p>
                 <h3 className="text-lg font-semibold text-white mb-3">Multi-Competition</h3>
@@ -86,7 +86,7 @@ export default function HomePage() {
 
               <div className="bg-black p-8 md:p-10 flex flex-col">
                 <div className="w-10 h-10 border border-[#333333] flex items-center justify-center mb-6">
-                  <Scale className="w-5 h-5 text-[#8b5cf6]" />
+                  <Scale className="w-5 h-5 text-[#f54e00]" />
                 </div>
                 <p className="text-xs text-[#c0c0c0] font-medium tracking-widest mb-3">02</p>
                 <h3 className="text-lg font-semibold text-white mb-3">Weighted Scoring</h3>
@@ -97,7 +97,7 @@ export default function HomePage() {
 
               <div className="bg-black p-8 md:p-10 flex flex-col">
                 <div className="w-10 h-10 border border-[#333333] flex items-center justify-center mb-6">
-                  <Zap className="w-5 h-5 text-[#8b5cf6]" />
+                  <Zap className="w-5 h-5 text-[#f54e00]" />
                 </div>
                 <p className="text-xs text-[#c0c0c0] font-medium tracking-widest mb-3">03</p>
                 <h3 className="text-lg font-semibold text-white mb-3">Live Leaderboard</h3>
