@@ -6,7 +6,7 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 
 // Load env from project root (E2E tests need Firebase Admin credentials)
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 // This helper is intended for local E2E automation only. It requires
 // Firebase Admin credentials via environment variables. Do NOT commit
