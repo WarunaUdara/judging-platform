@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
@@ -15,7 +18,9 @@
     "mvp-seed": "bun scripts/mvp-seed.ts",
     "test:automated": "bun scripts/automated-test.ts",
     "firebase:deploy": "firebase deploy --only firestore:rules,database",
-    "firebase:emulator": "firebase emulators:start"
+    "firebase:emulator": "firebase emulators:start",
+    "check": "ultracite check",
+    "fix": "ultracite fix"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -51,6 +56,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.4.10",
     "@playwright/test": "^1.59.0",
     "@serwist/turbopack": "^9.5.7",
     "@tailwindcss/postcss": "^4",
@@ -61,11 +67,11 @@
     "@types/react-dom": "^19",
     "@types/uuid": "^11.0.0",
     "esbuild": "^0.28.0",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.1",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "ultracite": "7.4.3",
+    "vitest": "^4.1.2"
   },
   "ignoreScripts": [
     "sharp",
