@@ -1,126 +1,88 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { adminDb, adminAuth } from '@/lib/firebase/admin';
-import { SessionResponse, UserRole } from '@/lib/types';
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
-    const body = await request.json();
-    const { idToken } = body;
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (!idToken) {
-      return NextResponse.json({ error: 'Missing idToken' }, { status: 400 });
+    if (userError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    let decodedToken;
-    try {
-      decodedToken = await adminAuth.verifyIdToken(idToken);
-    } catch (verifyError) {
-      console.error('Token verification failed:', verifyError);
-      return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
+    const { data: profile, error: profileError } = await supabase
+      .from("users")
+      .select("role, competition_ids")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      return NextResponse.json(
+        { error: "Failed to load user profile" },
+        { status: 500 }
+      );
     }
 
-    console.log('Authenticated user:', decodedToken.email, decodedToken.uid);
-
-    const userRef = adminDb.collection('users').doc(decodedToken.uid);
-    const userDoc = await userRef.get();
-
-    let userRole: UserRole = 'pending';
-    let competitionIds: string[] = [];
-
-    if (!userDoc.exists) {
-      console.log('User not found in Firestore, creating new user');
-      await userRef.set({
-        uid: decodedToken.uid,
-        email: decodedToken.email || '',
-        displayName: decodedToken.name || decodedToken.email?.split('@')[0] || 'User',
-        photoURL: decodedToken.picture || null,
-        role: 'pending',
-        competitionIds: [],
-        createdAt: new Date().toISOString(),
-        lastLoginAt: new Date().toISOString(),
-      });
-      userRole = 'pending';
-    } else {
-      const userData = userDoc.data();
-      console.log('User found in Firestore:', userData?.role, userData?.email);
-      
-      userRole = (userData?.role as UserRole) || 'pending';
-      competitionIds = userData?.competitionIds || [];
-
-      await userRef.update({
-        lastLoginAt: new Date().toISOString(),
-      });
-    }
-
-    console.log('Returning role:', userRole);
-
-    const expiresIn = 60 * 60 * 24 * 14 * 1000;
-    let sessionCookie;
-    try {
-      sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
-    } catch (cookieError) {
-      console.error('Session cookie creation failed:', cookieError);
-      return NextResponse.json({ error: 'Failed to create session cookie' }, { status: 500 });
-    }
-
-    const isProduction = process.env.NODE_ENV === 'production';
-    console.log('Environment:', process.env.NODE_ENV, 'Secure cookie:', isProduction);
-
-    const options = {
-      maxAge: expiresIn / 1000,
-      httpOnly: true,
-      secure: isProduction,
-      path: '/',
-      sameSite: 'lax' as const,
-    };
-
-    const response = NextResponse.json<SessionResponse>({
+    return NextResponse.json({
       success: true,
-      role: userRole,
-      competitionIds,
-      uid: decodedToken.uid,
+      role: profile?.role ?? "pending",
+      competitionIds: profile?.competition_ids ?? [],
+      uid: user.id,
     });
-
-    response.cookies.set('session', sessionCookie, options);
-    console.log('Cookie set, redirecting to:', userRole === 'superadmin' || userRole === 'organizer' ? '/admin' : userRole === 'evaluator' ? '/judge/dashboard' : '/');
-
-    return response;
   } catch (error) {
-    console.error('Session creation error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("Session creation error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const sessionCookie = request.cookies.get('session')?.value;
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (!sessionCookie) {
+    if (userError || !user) {
       return NextResponse.json({ authenticated: false }, { status: 401 });
     }
 
-    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true);
-    
-    const userDoc = await adminDb.collection('users').doc(decodedClaims.uid).get();
-    const userData = userDoc.data();
+    const { data: profile, error: profileError } = await supabase
+      .from("users")
+      .select("role, competition_ids")
+      .eq("id", user.id)
+      .maybeSingle();
 
-    console.log('GET /session - user:', decodedClaims.email, 'role:', userData?.role);
+    if (profileError) {
+      return NextResponse.json({ authenticated: false }, { status: 401 });
+    }
 
     return NextResponse.json({
       authenticated: true,
-      uid: decodedClaims.uid,
-      email: decodedClaims.email,
-      role: userData?.role || 'pending',
-      competitionIds: userData?.competitionIds || [],
+      uid: user.id,
+      email: user.email,
+      role: profile?.role ?? "pending",
+      competitionIds: profile?.competition_ids ?? [],
     });
   } catch (error) {
-    console.error('Session verification error:', error);
+    console.error("Session verification error:", error);
     return NextResponse.json({ authenticated: false }, { status: 401 });
   }
 }
 
 export async function DELETE() {
-  const response = NextResponse.json({ success: true });
-  response.cookies.delete('session');
-  return response;
+  try {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  } catch (error) {
+    console.error("Session delete error:", error);
+  }
+
+  return NextResponse.json({ success: true });
 }

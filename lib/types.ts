@@ -1,211 +1,211 @@
-import { Timestamp } from 'firebase/firestore';
+type Timestamp = string;
 
-export type UserRole = 'superadmin' | 'organizer' | 'evaluator' | 'pending';
-export type CompetitionStatus = 'draft' | 'active' | 'scoring' | 'closed';
-export type CompetitionType = 'hackathon' | 'designathon' | 'custom';
-export type ScorecardStatus = 'draft' | 'submitted';
-export type TeamStatus = 'registered' | 'submitted' | 'disqualified';
-export type TeamMemberRole = 'leader' | 'member';
+export type UserRole = "superadmin" | "organizer" | "evaluator" | "pending";
+export type CompetitionStatus = "draft" | "active" | "scoring" | "closed";
+export type CompetitionType = "hackathon" | "designathon" | "custom";
+export type ScorecardStatus = "draft" | "submitted";
+export type TeamStatus = "registered" | "submitted" | "disqualified";
+export type TeamMemberRole = "leader" | "member";
 
 export interface Organisation {
-  id: string;
-  name: string;
-  slug: string;
   contactEmail: string;
   createdAt: Timestamp;
   createdBy: string;
+  id: string;
+  name: string;
+  slug: string;
 }
 
 export interface Competition {
-  id: string;
-  orgId: string;
-  name: string;
-  type: CompetitionType;
-  description: string;
-  status: CompetitionStatus;
-  teamMinSize: number;
-  teamMaxSize: number;
   allowedDomains: string[];
+  createdAt: Timestamp;
+  createdBy: string;
+  description: string;
+  id: string;
+  name: string;
+  orgId: string;
   scoringConfig: {
     allowPartialSubmit: boolean;
-    showLeaderboardTo: 'evaluators_and_organizers' | 'organizers_only';
-    scoreVisibilityMode: 'live' | 'after_close';
+    showLeaderboardTo: "evaluators_and_organizers" | "organizers_only";
+    scoreVisibilityMode: "live" | "after_close";
     allowRescoring: boolean;
   };
-  createdAt: Timestamp;
+  status: CompetitionStatus;
+  teamMaxSize: number;
+  teamMinSize: number;
+  type: CompetitionType;
   updatedAt: Timestamp;
-  createdBy: string;
 }
 
 export interface Criterion {
-  id: string;
-  competitionId: string;
-  name: string;
-  description: string;
-  weight: number;
-  maxScore: number;
-  order: number;
-  isRequired: boolean;
   category: string;
+  competitionId: string;
+  description: string;
+  id: string;
+  isRequired: boolean;
+  maxScore: number;
+  name: string;
+  order: number;
+  weight: number;
 }
 
 export interface TeamMember {
-  name: string;
   email: string;
+  name: string;
+  role: TeamMemberRole;
   studentId: string;
   university: string;
-  role: TeamMemberRole;
 }
 
 export interface Team {
-  id: string;
   competitionId: string;
-  name: string;
   domain: string;
-  projectTitle: string;
-  submissionUrl: string;
-  members: TeamMember[];
+  id: string;
   importedAt: Timestamp;
-  status: TeamStatus;
+  members: TeamMember[];
+  name: string;
   notes: string;
+  projectTitle: string;
+  status: TeamStatus;
+  submissionUrl: string;
 }
 
 export interface Evaluator {
-  uid: string;
-  competitionId: string;
-  email: string;
-  displayName: string;
-  role: 'evaluator' | 'head_judge';
-  assignedTeamIds: string[];
-  isActive: boolean;
   addedAt: Timestamp;
   addedBy: string;
+  assignedTeamIds: string[];
+  competitionId: string;
+  displayName: string;
+  email: string;
+  isActive: boolean;
+  role: "evaluator" | "head_judge";
+  uid: string;
 }
 
 export interface CriterionScoreData {
-  score: number;
   remarks: string;
+  score: number;
   updatedAt: Timestamp;
 }
 
 export interface Scorecard {
-  id: string;
-  teamId: string;
-  evaluatorId: string;
   competitionId: string;
-  status: ScorecardStatus;
+  evaluatorId: string;
+  id: string;
   scores: Record<string, CriterionScoreData>;
-  totalRawScore: number;
-  weightedScore: number;
+  status: ScorecardStatus;
   submittedAt: Timestamp | null;
+  teamId: string;
+  totalRawScore: number;
   updatedAt: Timestamp;
+  weightedScore: number;
 }
 
 export interface LeaderboardCache {
-  teamId: string;
-  teamName: string;
-  domain: string;
   averageWeightedScore: number;
+  domain: string;
+  lastUpdated: Timestamp;
   rank: number;
   submittedScoreCount: number;
+  teamId: string;
+  teamName: string;
   totalEvaluators: number;
-  lastUpdated: Timestamp;
 }
 
 export interface Invitation {
-  id: string;
-  email: string;
-  role: UserRole;
   competitionId: string;
-  orgId: string;
-  createdBy: string;
   createdAt: Timestamp;
+  createdBy: string;
+  email: string;
   expiresAt: Timestamp;
+  id: string;
+  orgId: string;
+  role: UserRole;
   used: boolean;
   usedAt: Timestamp | null;
 }
 
 export interface AuditLog {
-  id: string;
-  actorUid: string;
-  actorEmail: string;
   action: string;
-  resourceType: string;
-  resourceId: string;
+  actorEmail: string;
+  actorUid: string;
   competitionId: string;
-  meta: Record<string, any>;
+  id: string;
+  meta: Record<string, unknown>;
+  resourceId: string;
+  resourceType: string;
   timestamp: Timestamp;
 }
 
 export interface CustomClaims {
-  role: UserRole;
-  orgId: string;
   competitionIds: string[];
+  orgId: string;
+  role: UserRole;
 }
 
 // API Request/Response types
 export interface CreateCompetitionRequest {
-  name: string;
-  type: CompetitionType;
-  description: string;
-  teamMinSize: number;
-  teamMaxSize: number;
   allowedDomains: string[];
-  scoringConfig: Competition['scoringConfig'];
+  description: string;
+  name: string;
+  scoringConfig: Competition["scoringConfig"];
+  teamMaxSize: number;
+  teamMinSize: number;
+  type: CompetitionType;
 }
 
 export interface ImportTeamsRequest {
   competitionId: string;
-  teams: Omit<Team, 'id' | 'competitionId' | 'importedAt' | 'status'>[];
-  format: 'csv' | 'json';
+  format: "csv" | "json";
+  teams: Omit<Team, "id" | "competitionId" | "importedAt" | "status">[];
 }
 
 export interface ImportTeamsResponse {
-  imported: number;
   errors: Array<{ index: number; reason: string }>;
+  imported: number;
 }
 
 export interface CreateInvitationRequest {
-  email: string;
-  role: UserRole;
-  competitionId: string;
-  orgId: string;
   assignedTeamIds?: string[];
+  competitionId: string;
+  email: string;
+  orgId: string;
+  role: UserRole;
 }
 
 export interface CreateInvitationResponse {
+  emailSent?: boolean;
+  expiresAt: string;
   inviteUrl: string;
   token: string;
-  expiresAt: string;
-  emailSent?: boolean;
 }
 
 export interface AcceptInvitationRequest {
-  token: string;
   idToken: string;
+  token: string;
 }
 
 export interface AcceptInvitationResponse {
-  success: boolean;
   competitionId: string;
   role: UserRole;
+  success: boolean;
 }
 
 export interface SubmitScoreRequest {
-  teamId: string;
   competitionId: string;
   scores: Record<string, { score: number; remarks: string }>;
+  teamId: string;
 }
 
 export interface SubmitScoreResponse {
+  scorecardId: string;
   success: boolean;
   weightedScore: number;
-  scorecardId: string;
 }
 
 export interface SessionResponse {
-  success: boolean;
-  role: UserRole;
   competitionIds: string[];
+  role: UserRole;
+  success: boolean;
   uid: string;
 }

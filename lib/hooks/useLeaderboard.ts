@@ -1,30 +1,24 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { ref, onValue, off } from 'firebase/database';
-import { rtdb } from '@/lib/firebase/client';
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 export interface LeaderboardEntry {
-  teamId: string;
-  teamName: string;
-  domain: string;
   averageWeightedScore: number;
+  domain: string;
   rank: number;
   submittedScoreCount: number;
+  teamId: string;
+  teamName: string;
 }
 
 export interface UseLeaderboardReturn {
   entries: LeaderboardEntry[];
-  loading: boolean;
   error: Error | null;
+  loading: boolean;
   updatedAt: number | null;
 }
 
-/**
- * Real-time hook for subscribing to leaderboard updates from Firebase Realtime Database
- * @param competitionId The competition ID to subscribe to
- * @returns Leaderboard entries, loading state, and error
- */
 export function useLeaderboard(competitionId: string): UseLeaderboardReturn {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,68 +31,63 @@ export function useLeaderboard(competitionId: string): UseLeaderboardReturn {
       return;
     }
 
-    const leaderboardRef = ref(rtdb, `leaderboards/${competitionId}`);
+    const supabase = createClient();
 
-    const unsubscribe = onValue(
-      leaderboardRef,
-      (snapshot) => {
-        try {
-          const data = snapshot.val();
-          console.log('Leaderboard data received:', data);
-          
-          if (!data) {
-            setEntries([]);
-            setUpdatedAt(null);
-            setLoading(false);
-            return;
-          }
+    const load = async () => {
+      const { data, error: queryError } = await supabase
+        .from("leaderboard_cache")
+        .select(
+          "team_id, team_name, domain, average_weighted_score, rank, submitted_score_count, last_updated"
+        )
+        .eq("competition_id", competitionId)
+        .order("rank", { ascending: true });
 
-          // Handle both data structures:
-          // 1. { entries: { team-1: {...}, team-2: {...} }, updatedAt: ... }
-          // 2. { entries: { team-1: {...}, team-2: {...}, updatedAt: ... } }
-          const entriesData = data.entries || data;
-          
-          // Extract updatedAt from wherever it is
-          const timestamp = data.updatedAt || entriesData?.updatedAt || Date.now();
-          
-          // Filter out non-team entries (like updatedAt) - team entries have teamName property
-          const teamEntries = Object.entries(entriesData)
-            .filter(([key, value]) => {
-              if (key === 'updatedAt') return false;
-              // Check if this looks like a team entry (has teamName or averageWeightedScore)
-              const v = value as Record<string, unknown>;
-              return v && (typeof v.teamName === 'string' || typeof v.averageWeightedScore === 'number');
-            })
-            .map(([teamId, value]: [string, any]) => ({
-              teamId,
-              teamName: value.teamName || '',
-              domain: value.domain || '',
-              averageWeightedScore: value.averageWeightedScore || 0,
-              rank: value.rank || 0,
-              submittedScoreCount: value.submittedScoreCount || 0,
-            }))
-            .sort((a, b) => a.rank - b.rank);
-          
-          console.log('Parsed leaderboard entries:', teamEntries);
-          setEntries(teamEntries);
-          setUpdatedAt(timestamp);
-          setError(null);
-        } catch (err) {
-          console.error('Error parsing leaderboard data:', err);
-          setError(err as Error);
-        } finally {
-          setLoading(false);
-        }
-      },
-      (err) => {
-        console.error('Firebase RTDB error:', err);
-        setError(err as Error);
+      if (queryError) {
+        setError(queryError);
         setLoading(false);
+        return;
       }
-    );
+
+      const mapped = (data ?? []).map((row) => ({
+        teamId: row.team_id,
+        teamName: row.team_name,
+        domain: row.domain,
+        averageWeightedScore: row.average_weighted_score,
+        rank: row.rank,
+        submittedScoreCount: row.submitted_score_count,
+      }));
+
+      setEntries(mapped);
+      setUpdatedAt(Date.now());
+      setLoading(false);
+      setError(null);
+    };
+
+    load().catch((loadError: unknown) => {
+      setError(loadError as Error);
+      setLoading(false);
+    });
+
+    const channel = supabase
+      .channel(`leaderboard:${competitionId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "leaderboard_cache",
+          filter: `competition_id=eq.${competitionId}`,
+        },
+        () => {
+          load().catch((loadError: unknown) => {
+            setError(loadError as Error);
+          });
+        }
+      )
+      .subscribe();
 
     return () => {
-      off(leaderboardRef);
+      supabase.removeChannel(channel);
     };
   }, [competitionId]);
 

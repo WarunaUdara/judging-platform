@@ -1,23 +1,11 @@
-E2E Test Helpers
-================
+E2E Test Notes
+==============
 
-This folder contains Playwright E2E tests and admin helpers used for automated
-test setup. The helpers require Firebase Admin credentials to create test users
-and mint session cookies.
+The previous Firebase-based admin helper flow has been removed.
 
-Before running the E2E tests locally, create a file at `tests/e2e/.env` with the
-following variables (do NOT commit this file):
+When adding E2E authenticated scenarios for Supabase, prefer one of these:
 
-FIREBASE_API_KEY=your-firebase-web-api-key
-FIREBASE_ADMIN_PROJECT_ID=your-firebase-project-id
-FIREBASE_ADMIN_CLIENT_EMAIL=your-service-account-client-email
-FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+1. Use a dedicated Supabase test project and seed known users in `auth.users`.
+2. Authenticate through the real login flow in Playwright.
 
-How it works:
-- `tests/e2e/helpers/adminHelper.ts` uses the Admin SDK to ensure a test user exists
-  and to mint a session cookie that Playwright sets in the browser context.
-- The tests then run authenticated flows as that user.
-
-Security:
-- Never commit service account keys or API keys. Keep them in a local env file
-  or CI secrets.
+Keep secrets in `tests/e2e/.env` and never commit them.
